@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Agregar Producción{% endblock %}
+{% block content %}
+<form method="post">
+  Fecha: <input type="date" name="fecha"><br>
+  Código: <input type="text" name="codigo"><br>
+  Producto: <input type="text" name="producto"><br>
+  Presentación: <input type="text" name="presentacion"><br>
+  Cantidad: <input type="number" name="cantidad"><br>
+  Unidad: <input type="text" name="unidad"><br>
+  Responsables: <input type="text" name="responsables"><br>
+  <input type="submit" value="Guardar">
+</form>
+<a href="{{ url_for('index') }}">← Volver</a>
+{% endblock %}

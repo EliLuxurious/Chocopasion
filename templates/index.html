@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Lista Producción{% endblock %}
+{% block header %}Lista Producción{% endblock %}
+{% block content %}
+<a href="{{ url_for('agregar') }}">Agregar nuevo</a>
+<table border="1">
+  <tr><th>Fecha</th><th>Producto</th><th>Presentación</th><th>Cantidad</th><th>Unidad</th><th>Responsables</th><th>Acción</th></tr>
+  {% for r in registros %}
+  <tr>
+    <td>{{ r['fecha'] }}</td>
+    <td>{{ r['producto'] }}</td>
+    <td>{{ r['presentacion'] }}</td>
+    <td>{{ r['cantidad'] }}</td>
+    <td>{{ r['unidad'] }}</td>
+    <td>{{ r['responsables'] }}</td>
+    <td><a href="{{ url_for('eliminar', id=r['id']) }}">Eliminar</a></td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}
