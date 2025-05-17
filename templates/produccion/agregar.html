@@ -1,0 +1,125 @@
+<!-- filepath: c:\SI\Chocopasion\templates\produccion\agregar.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Producción</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="ChocoPassion">
+            <h3>ChocoPassion</h3>
+        </div>
+        <nav class="nav flex-column">
+            <a class="nav-link" href="{{ url_for('index') }}">
+                <i class="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </a>
+            <a class="nav-link" href="{{ url_for('productos_index') }}">
+                <i class="fas fa-box"></i>
+                <span>Productos</span>
+            </a>
+            <a class="nav-link active" href="{{ url_for('produccion_index') }}">
+                <i class="fas fa-industry"></i>
+                <span>Producción</span>
+            </a>
+            <a class="nav-link" href="{{ url_for('usuarios_index') }}">
+                <i class="fas fa-users"></i>
+                <span>Usuarios</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="welcome-header">
+            <h1>Agregar Producción</h1>
+        </div>
+
+        <!-- Formulario -->
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="fecha" class="form-label">Fecha:</label>
+                        <input type="date" id="fecha" name="fecha" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="producto" class="form-label">Producto:</label>
+                        <select id="producto" name="producto" class="form-select" required>
+                            <option disabled selected>Seleccionar producto</option>
+                            {% for producto in productos %}
+                            <option value="{{ producto.id }}">{{ producto.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="presentacion" class="form-label">Presentación:</label>
+                        <select id="presentacion" name="presentacion" class="form-select" required>
+                            <option disabled selected>Seleccionar presentación</option>
+                            {% for presentacion in presentaciones %}
+                            <option value="{{ presentacion.id }}">{{ presentacion.descripcion }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cantidad" class="form-label">Cantidad:</label>
+                        <input type="number" id="cantidad" name="cantidad" class="form-control" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="responsables" class="form-label">Responsables:</label>
+                        <div id="responsables-container">
+                            <div class="input-group mb-2">
+                                <select name="responsables[]" class="form-select">
+                                    <option disabled selected>Seleccionar responsable</option>
+                                    {% for usuario in usuarios %}
+                                    <option value="{{ usuario.id }}">{{ usuario.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" class="btn btn-success add-responsable"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+                        <small class="text-muted">Haz clic en el botón "+" para agregar más responsables.</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Producción</button>
+                    <a href="{{ url_for('produccion_index') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Script para agregar más campos de responsables
+        document.addEventListener('click', function (e) {
+            if (e.target && e.target.classList.contains('add-responsable')) {
+                const container = document.getElementById('responsables-container');
+                const newField = document.createElement('div');
+                newField.classList.add('input-group', 'mb-2');
+                newField.innerHTML = `
+                    <select name="responsables[]" class="form-select">
+                        <option disabled selected>Seleccionar responsable</option>
+                        {% for usuario in usuarios %}
+                        <option value="{{ usuario.id }}">{{ usuario.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn btn-danger remove-responsable"><i class="fas fa-minus"></i></button>
+                `;
+                container.appendChild(newField);
+            } else if (e.target && e.target.classList.contains('remove-responsable')) {
+                e.target.parentElement.remove();
+            }
+        });
+    </script>
+</body>
+</html>

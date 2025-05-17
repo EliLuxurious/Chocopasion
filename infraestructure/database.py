@@ -112,25 +112,38 @@ def produccion_agregar():
     cursor = conn.cursor(dictionary=True)
     if request.method == 'POST':
         try:
-            responsables = ','.join(request.form.getlist('responsables'))
+            # Obtén los datos del formulario
+            fecha = request.form['fecha']
+            producto = request.form['producto']
+            presentacion = request.form['presentacion']
+            cantidad = request.form['cantidad']
+            responsables = request.form.getlist('responsables')  # Obtiene todos los responsables seleccionados
+
+            # Inserta los datos en la tabla `produccion`
             cursor.execute("""
-                INSERT INTO produccion (fecha, id_producto, id_presentacion, cantidad, responsables)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (
-                request.form['fecha'],
-                request.form['producto'],
-                request.form['presentacion'],
-                request.form['cantidad'],
-                responsables
-            ))
+                INSERT INTO produccion (fecha, id_producto, id_presentacion, cantidad)
+                VALUES (%s, %s, %s, %s)
+            """, (fecha, producto, presentacion, cantidad))
+            produccion_id = cursor.lastrowid  # Obtén el ID de la producción recién insertada
+
+            # Inserta los responsables en la tabla `produccion_responsables`
+            for responsable_id in responsables:
+                cursor.execute("""
+                    INSERT INTO produccion_responsables (produccion_id, responsable_id)
+                    VALUES (%s, %s)
+                """, (produccion_id, responsable_id))
+
             conn.commit()
             flash('Producción agregada exitosamente', 'success')
         except Error as err:
+            # Imprime el error para depuración
+            print(f"Error al agregar producción: {err}")
             flash(f'Error al agregar producción: {err}', 'danger')
         finally:
             conn.close()
         return redirect(url_for('produccion_index'))
     
+    # Carga los datos necesarios para el formulario
     cursor.execute("SELECT * FROM productos ORDER BY nombre")
     productos = cursor.fetchall()
     cursor.execute("SELECT * FROM presentaciones ORDER BY descripcion")
@@ -149,7 +162,6 @@ def produccion_agregar():
         usuarios=usuarios,
         fecha_actual=fecha_actual
     )
-
 @app.route('/produccion/editar/<int:id>', methods=['GET', 'POST'])
 def produccion_editar(id):
     conn = conectar()

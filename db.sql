@@ -18,14 +18,13 @@ CREATE TABLE presentaciones (
 -- Tabla de producción
 CREATE TABLE produccion (
     id_produccion INT AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE NOT NULL,
     id_producto INT NOT NULL,
     id_presentacion INT NOT NULL,
     cantidad INT NOT NULL,
-    id_responsable
-    fecha DATE NOT NULL,
+    responsables TEXT,
     FOREIGN KEY (id_producto) REFERENCES productos(id_producto),
     FOREIGN KEY (id_presentacion) REFERENCES presentaciones(id_presentacion)
-    FOREIGN KEY (id_responsable) REFERENCES usuarios(id_usuario)
 );
 
 -- Insertar presentaciones
