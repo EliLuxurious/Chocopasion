@@ -1,0 +1,20 @@
+<!-- filepath: c:\SI\Chocopasion\templates\producto\agregar.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Producto</title>
+</head>
+<body>
+    <h1>Agregar Producto</h1>
+    <form method="POST">
+        <label for="codigo">Código:</label>
+        <input type="text" id="codigo" name="codigo" required><br>
+        <label for="nombre">Nombre:</label>
+        <input type="text" id="nombre" name="nombre" required><br>
+        <button type="submit">Agregar</button>
+    </form>
+    <a href="{{ url_for('producto_index') }}">Volver</a>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!-- filepath: c:\SI\Chocopasion\templates\produccion\index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Producción</title>
+</head>
+<body>
+    <h1>Producciones</h1>
+    <a href="{{ url_for('produccion_agregar') }}">Agregar Producción</a>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Producto</th>
+                <th>Presentación</th>
+                <th>Cantidad</th>
+                <th>Responsables</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for produccion in producciones %}
+            <tr>
+                <td>{{ produccion.id }}</td>
+                <td>{{ produccion.fecha }}</td>
+                <td>{{ produccion.producto }}</td>
+                <td>{{ produccion.presentacion }}</td>
+                <td>{{ produccion.cantidad }}</td>
+                <td>
+                    {% for responsable in produccion.responsables %}
+                        {{ responsable }}<br>
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
