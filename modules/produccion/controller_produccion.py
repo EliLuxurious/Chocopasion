@@ -1,42 +1,35 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for
 import mysql.connector
 from mysql.connector import Error
 
-app = Flask(__name__)
+# Crear el blueprint
+produccion_bp = Blueprint('produccion', __name__)
 
 def conectar():
     try:
-        print("Intentando conectar a la base de datos...")
         conn = mysql.connector.connect(
             host='127.0.0.1',
             user='root',
             password='',
             database='chocopasion',
-            port=3306,
-            auth_plugin='mysql_native_password'
+            port=3306
         )
-        print("✅ Conexión exitosa a la base de datos")
         return conn
     except Error as err:
-        print(f"❌ Error al conectar a la base de datos: {err}")
-        if err.errno == 1045:
-            print("Error: Usuario o contraseña incorrectos")
-        elif err.errno == 1049:
-            print("Error: La base de datos no existe")
-        elif err.errno == 2003:
-            print("Error: No se puede conectar al servidor MySQL")
+        print(f"Error de conexión: {err}")
         raise
 
-@app.route('/')
+@produccion_bp.route('/')
 def index():
     conn = conectar()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM produccion ORDER BY fecha DESC")
     registros = cursor.fetchall()
+    cursor.close()
     conn.close()
-    return render_template("index.html", registros=registros)
+    return render_template('produccion/index.html', registros=registros)
 
-@app.route('/agregar', methods=['GET', 'POST'])
+@produccion_bp.route('/agregar', methods=['GET', 'POST'])
 def agregar():
     if request.method == 'POST':
         conn = conectar()
@@ -54,19 +47,17 @@ def agregar():
             request.form['responsables']
         ))
         conn.commit()
+        cursor.close()
         conn.close()
-        return redirect(url_for('index'))
-    return render_template("agregar.html")
+        return redirect(url_for('produccion.index'))
+    return render_template('produccion/agregar.html')
 
-@app.route('/eliminar/<int:id>')
+@produccion_bp.route('/eliminar/<int:id>')
 def eliminar(id):
     conn = conectar()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM produccion WHERE id=%s", (id,))
     conn.commit()
+    cursor.close()
     conn.close()
-    return redirect(url_for('index'))
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
+    return redirect(url_for('produccion.index'))

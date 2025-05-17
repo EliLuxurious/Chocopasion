@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Iniciar Sesión</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+<body class="login-page">
+
+  <div class="login-form-container">
+    <div class="bunny-container">
+      <img src="{{ url_for('static', filename='img/bunny-open.png') }}" id="bunny-img" alt="Conejo">
+    </div>
+
+    <h3 class="text-center mb-4">Iniciar Sesión</h3>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST">
+      <div class="form-group mb-3">
+        <input type="text" class="form-control" name="username" placeholder="Usuario" required>
+      </div>
+      <div class="form-group mb-3">
+        <input type="password" class="form-control" name="password" id="password" placeholder="Contraseña" required>
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+    </form>
+
+    <div class="text-center mt-3">
+      <a href="{{ url_for('usuario_bp.registrar') }}">¿No tienes cuenta? Regístrate</a>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+.login-page {
+    background: url('../img/fondo.gif') no-repeat center;
+
+    background-size: cover;
+    font-family: 'Arial', sans-serif;
+  }
+  
+  .login-form-container {
+    background-color: rgba(255, 255, 255, 0.169);
+    padding: 40px;
+    border-radius: 16px;
+    max-width: 400px;
+    margin: 80px auto;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    backdrop-filter: blur(10px);
+  }
+  
+  .bunny-container {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .bunny-container img {
+    width: 100px;
+    transition: all 0.3s ease;
+  }
+  

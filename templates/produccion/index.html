@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Lista de Producción{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Lista de Producción</h1>
+    <a href="{{ url_for('produccion.agregar') }}" class="btn btn-primary">Agregar Producción</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Código</th>
+                <th>Producto</th>
+                <th>Presentación</th>
+                <th>Cantidad</th>
+                <th>Unidad</th>
+                <th>Responsables</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in registros %}
+            <tr>
+                <td>{{ r['fecha'] }}</td>
+                <td>{{ r['codigo'] }}</td>
+                <td>{{ r['producto'] }}</td>
+                <td>{{ r['presentacion'] }}</td>
+                <td>{{ r['cantidad'] }}</td>
+                <td>{{ r['unidad'] }}</td>
+                <td>{{ r['responsables'] }}</td>
+                <td>
+                    <a href="{{ url_for('produccion.eliminar', id=r['id']) }}" 
+                       class="btn btn-danger btn-sm"
+                       onclick="return confirm('¿Está seguro de eliminar este registro?')">
+                        Eliminar 
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
