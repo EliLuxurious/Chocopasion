@@ -265,14 +265,18 @@ def productos_index():
     conn.close()
     return render_template("producto/index.html", productos=productos)
 
+# ...existing code...
+
 @app.route('/productos/agregar', methods=['GET', 'POST'])
 def productos_agregar():
     if request.method == 'POST':
         conn = conectar()
         cursor = conn.cursor()
         try:
-            cursor.execute("INSERT INTO productos (codigo, nombre) VALUES (%s, %s)", 
-                         (request.form['codigo'], request.form['nombre']))
+            cursor.execute(
+                "INSERT INTO productos (codigo, nombre, descripcion) VALUES (%s, %s, %s)", 
+                (request.form['codigo'], request.form['nombre'], request.form['descripcion'])
+            )
             conn.commit()
             flash('Producto agregado exitosamente', 'success')
         except Error as err:
@@ -291,11 +295,12 @@ def productos_editar(id):
         try:
             cursor.execute("""
                 UPDATE productos 
-                SET codigo=%s, nombre=%s
+                SET codigo=%s, nombre=%s, descripcion=%s
                 WHERE id_producto=%s
             """, (
                 request.form['codigo'],
                 request.form['nombre'],
+                request.form['descripcion'],
                 id
             ))
             conn.commit()
@@ -316,6 +321,7 @@ def productos_editar(id):
     
     conn.close()
     return render_template("producto/editar.html", producto=producto)
+
 
 @app.route('/productos/eliminar/<int:id>')
 def productos_eliminar(id):

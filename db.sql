@@ -3,11 +3,45 @@ CREATE DATABASE chocopasion;
 USE chocopasion;
 
 -- Tabla de productos
+-- Tabla de productos
 CREATE TABLE productos (
     id_producto INT AUTO_INCREMENT PRIMARY KEY,
     codigo VARCHAR(50) NOT NULL UNIQUE,
-    nombre VARCHAR(100) NOT NULL
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT
 );
+
+-- Insertar productos con códigos y descripciones
+INSERT INTO productos (codigo, nombre, descripcion) VALUES
+('SAB_COCO', 'COCO', 'Cacao 60%, coco'),
+('SAB_AGUA', 'AGUAYMANTO', 'Cacao 60%, aguaymanto'),
+('SUB_CACAO', 'NIBS DE CACAO', 'Fragmentos de grano de cacao tostado'),
+('SUB_CAFE', 'NIBS DE CAFÉ', 'Cacao 60%, café'),
+('SAB_LECHE', 'LECHE', 'Cacao 60%, leche'),
+('SAB_CAFELE', 'CAFÉ CON LECHE', 'Cacao 60%, leche, café'),
+('OSC_BIT60', 'BITTER 60 %', '60% cacao'),
+('OSC_BIT80', 'BITTER 80 %', '80% cacao'),
+('OSC_BIT82', 'BITTER 82 %', '82% cacao'),
+('OSC_BIT75', 'BITTER 75 %', '75% cacao'),
+('SAB_MANI', 'MANI', 'Cacao 60%, maní'),
+('SAB_CAMU', 'CAMU CAMU', 'Cacao 60%, camu camu'),
+('PURO_100', 'PASTA 100 %', '100% cacao (para taza)'),
+('DER_MANT', 'MANTECA', 'Grasa natural del cacao'),
+('DER_POLVO', 'POLVO', 'Polvo de cacao'),
+('SOL_CHUCHO', 'CHUPETE CHOCOLATE', 'Cacao 60%, molde en chupete'),
+('BEB_MUCIL', 'BEBIDA DE MUCILAGO', 'Mucílago de cacao (liquido)'),
+('SAB_SALAM', 'SAL AMAZÓNICO', 'Cacao 60%, sal amazónica'),
+('SAB_MLECHE', 'MANI CON LECHE', 'Cacao 60%, maní, leche'),
+('SAB_ARAND', 'ARANDANO', 'Cacao 60%, arandano'),
+('SAB_NARAN', 'NARANJA', 'Cacao 60%, naranja'),
+('OSC_PURO60', 'PURO 60 %', '60% cacao'),
+('SAB_SALQUI', 'SAL Y QUINUA', 'Cacao 60%, sal, quinua'),
+('SAB_LECHE45', 'LECHE 45%', 'Cacao 45%, leche'),
+('SAB_PIÑA', 'PIÑA', 'Cacao 60%, piña'),
+('PURO_SEL', 'CACAO SELECCIONADO', 'Granos de cacao seleccionados 100%'),
+('SAB_BLANC', 'CHOCOLATE BLANCO', 'Manteca de cacao, leche, azúcar'),
+('SUB_CASCA', 'CASCARILLA', 'Cáscara de grano de cacao tostado'),
+('INS_TOSTADO', 'CACAO TOSTADO', 'Grano de cacao 100% tostado');
 
 -- Tabla de presentaciones
 CREATE TABLE presentaciones (
@@ -38,37 +72,6 @@ INSERT INTO presentaciones (descripcion) VALUES
 ('0.25 KG'),
 ('0.15 KG');
 
--- Insertar productos con códigos
-INSERT INTO productos (codigo, nombre) VALUES
-('SAB_COCO', 'COCO'),
-('SAB_AGUA', 'AGUAYMANTO'),
-('SUB_CACAO', 'NIBS DE CACAO'),
-('SUB_CAFE', 'NIBS DE CAFÉ'),
-('SAB_LECHE', 'LECHE'),
-('SAB_CAFELE', 'CAFÉ CON LECHE'),
-('OSC_BIT60', 'BITTER 60 %'),
-('OSC_BIT80', 'BITTER 80 %'),
-('OSC_BIT82', 'BITTER 82 %'),
-('OSC_BIT75', 'BITTER 75 %'),
-('SAB_MANI', 'MANI'),
-('SAB_CAMU', 'CAMU CAMU'),
-('PURO_100', 'PASTA 100 %'),
-('DER_MANT', 'MANTECA'),
-('DER_POLVO', 'POLVO'),
-('SOL_CHUCHO', 'CHUPETE CHOCOLATE'),
-('BEB_MUCIL', 'BEBIDA DE MUCILAGO'),
-('SAB_SALAM', 'SAL AMAZÓNICO'),
-('SAB_MLECHE', 'MANI CON LECHE'),
-('SAB_ARAND', 'ARANDANO'),
-('SAB_NARAN', 'NARANJA'),
-('OSC_PURO60', 'PURO 60 %'),
-('SAB_SALQUI', 'SAL Y QUINUA'),
-('SAB_LECHE45', 'LECHE 45%'),
-('SAB_PIÑA', 'PIÑA'),
-('PURO_SEL', 'CACAO SELECCIONADO'),
-('SAB_BLANC', 'CHOCOLATE BLANCO'),
-('SUB_CASCA', 'CASCARILLA'),
-('INS_TOSTADO', 'CACAO TOSTADO');
 
 -- Crear tabla de roles
 CREATE TABLE roles (

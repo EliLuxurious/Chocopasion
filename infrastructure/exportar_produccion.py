@@ -2,8 +2,7 @@ import pandas as pd
 import mysql.connector
 
 # 1. Cargar CSV (usa sep=';' si es necesario)
-df = pd.read_csv("Produccion Completa.csv", encoding='latin1', sep=';')
-
+df = pd.read_csv(r"c:\SI\Chocopasion\Produccion Completa.csv", encoding='latin1', sep=';')
 # 2. Normalizar nombres de columnas
 df.columns = [col.strip().upper() for col in df.columns]
 
