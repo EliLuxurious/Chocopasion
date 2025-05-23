@@ -51,14 +51,14 @@
                 <form method="POST">
                     <div class="mb-3">
                         <label for="fecha" class="form-label">Fecha:</label>
-                        <input type="date" id="fecha" name="fecha" class="form-control" required>
+                        <input type="date" id="fecha" name="fecha" class="form-control" value="{{ fecha_actual }}" required>
                     </div>
                     <div class="mb-3">
                         <label for="producto" class="form-label">Producto:</label>
                         <select id="producto" name="producto" class="form-select" required>
                             <option disabled selected>Seleccionar producto</option>
                             {% for producto in productos %}
-                            <option value="{{ producto.id }}">{{ producto.nombre }}</option>
+                            <option value="{{ producto.id_producto }}">{{ producto.nombre }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -67,7 +67,7 @@
                         <select id="presentacion" name="presentacion" class="form-select" required>
                             <option disabled selected>Seleccionar presentación</option>
                             {% for presentacion in presentaciones %}
-                            <option value="{{ presentacion.id }}">{{ presentacion.descripcion }}</option>
+                            <option value="{{ presentacion.id_presentacion }}">{{ presentacion.descripcion }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -79,10 +79,10 @@
                         <label for="responsables" class="form-label">Responsables:</label>
                         <div id="responsables-container">
                             <div class="input-group mb-2">
-                                <select name="responsables[]" class="form-select">
+                                <select name="responsables" class="form-select" required>
                                     <option disabled selected>Seleccionar responsable</option>
                                     {% for usuario in usuarios %}
-                                    <option value="{{ usuario.id }}">{{ usuario.nombre }}</option>
+                                    <option value="{{ usuario.id_usuario }}">{{ usuario.nombre }} {{ usuario.apellido }}</option>
                                     {% endfor %}
                                 </select>
                                 <button type="button" class="btn btn-success add-responsable"><i class="fas fa-plus"></i></button>
@@ -107,10 +107,10 @@
                 const newField = document.createElement('div');
                 newField.classList.add('input-group', 'mb-2');
                 newField.innerHTML = `
-                    <select name="responsables[]" class="form-select">
+                    <select name="responsables" class="form-select" required>
                         <option disabled selected>Seleccionar responsable</option>
                         {% for usuario in usuarios %}
-                        <option value="{{ usuario.id }}">{{ usuario.nombre }}</option>
+                        <option value="{{ usuario.id_usuario }}">{{ usuario.nombre }} {{ usuario.apellido }}</option>
                         {% endfor %}
                     </select>
                     <button type="button" class="btn btn-danger remove-responsable"><i class="fas fa-minus"></i></button>

@@ -56,11 +56,9 @@ CREATE TABLE produccion (
     id_producto INT NOT NULL,
     id_presentacion INT NOT NULL,
     cantidad INT NOT NULL,
-    responsables TEXT,
     FOREIGN KEY (id_producto) REFERENCES productos(id_producto),
     FOREIGN KEY (id_presentacion) REFERENCES presentaciones(id_presentacion)
 );
-
 -- Insertar presentaciones
 INSERT INTO presentaciones (descripcion) VALUES
 ('90 GR'),
@@ -86,3 +84,11 @@ INSERT INTO usuarios (nombre, apellido, email) VALUES
 ('Elia', 'Aquino', 'elia.aquino@gmail.com'),
 ('Mariela', 'Hernadez', 'mariela@gmail.com'),
 ('Elia', 'Silva', 'elia.silva@gmail.com');
+
+CREATE TABLE produccion_responsable (
+    id_produccion INT NOT NULL,
+    id_usuario INT NOT NULL,
+    PRIMARY KEY (id_produccion, id_usuario),
+    FOREIGN KEY (id_produccion) REFERENCES produccion(id_produccion) ON DELETE CASCADE,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
+);
