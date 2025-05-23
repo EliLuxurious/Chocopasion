@@ -39,7 +39,7 @@
         .sidebar .logo {
             text-align: center;
             margin-bottom: 30px;
-            padding: 0 15px;
+            padding: 0 25px;
         }
 
         .sidebar .logo img {
@@ -127,7 +127,7 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="logo">
-            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="ChocoPassion">
+            <img src="{{ url_for('static', filename='/static/img/logo.png') }}" alt="ChocoPassion">
             <h3>ChocoPassion</h3>
         </div>
         <nav class="nav flex-column">
@@ -170,6 +170,7 @@
                             <th>ID</th>
                             <th>Código</th>
                             <th>Nombre</th>
+                            <th>Descripción / Ingredientes clave</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -179,6 +180,7 @@
                             <td>{{ producto.id }}</td>
                             <td>{{ producto.codigo }}</td>
                             <td>{{ producto.nombre }}</td>
+                            <td>{{ producto.descripcion }}</td>
                             <td>
                                 <a href="{{ url_for('productos_editar', id=producto.id_producto) }}" class="btn btn-warning btn-sm">
                                     <i class="fas fa-edit"></i> Editar
