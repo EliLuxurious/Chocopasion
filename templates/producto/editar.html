@@ -1,0 +1,24 @@
+<!-- filepath: c:\SI\Chocopasion\templates\producto\editar.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Producto</title>
+    <!-- Enlace al archivo CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <h1>Editar Producto</h1>
+    <form method="POST">
+        <label for="codigo">Código:</label>
+        <input type="text" id="codigo" name="codigo" value="{{ producto.codigo }}" required>
+        
+        <label for="nombre">Nombre:</label>
+        <input type="text" id="nombre" name="nombre" value="{{ producto.nombre }}" required>
+        
+        <button type="submit">Guardar Cambios</button>
+    </form>
+    <a href="{{ url_for('productos_index') }}">Volver a la Lista de Productos</a>
+</body>
+</html>

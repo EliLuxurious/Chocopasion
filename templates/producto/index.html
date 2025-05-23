@@ -1,0 +1,201 @@
+<!-- filepath: c:\SI\Chocopasion\templates\productos\index.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4cc9f0;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --success-color: #4ade80;
+            --danger-color: #f87171;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            height: 100vh;
+            position: fixed;
+            padding-top: 20px;
+            width: 240px;
+        }
+
+        .sidebar .logo {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 0 15px;
+        }
+
+        .sidebar .logo img {
+            width: 50px;
+            height: 50px;
+        }
+
+        .sidebar .logo h3 {
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            margin: 5px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            margin-left: 240px;
+            padding: 30px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header h5 {
+            margin: 0;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-header h5 i {
+            margin-right: 10px;
+            background-color: var(--primary-color);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="ChocoPassion">
+            <h3>ChocoPassion</h3>
+        </div>
+        <nav class="nav flex-column">
+            <a class="nav-link" href="{{ url_for('index') }}">
+                <i class="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </a>
+            <a class="nav-link active" href="{{ url_for('productos_index') }}">
+                <i class="fas fa-box"></i>
+                <span>Productos</span>
+            </a>
+            <a class="nav-link" href="{{ url_for('produccion_index') }}">
+                <i class="fas fa-industry"></i>
+                <span>Producción</span>
+            </a>
+            <a class="nav-link" href="{{ url_for('usuarios_index') }}">
+                <i class="fas fa-users"></i>
+                <span>Usuarios</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="welcome-header">
+            <h1>Lista de Productos</h1>
+            <p class="text-muted">Administra los productos disponibles en el sistema.</p>
+        </div>
+
+        <!-- Products Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-box"></i> Productos</h5>
+                <a href="{{ url_for('productos_agregar') }}" class="btn btn-primary btn-sm">Agregar Producto</a>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos %}
+                        <tr>
+                            <td>{{ producto.id }}</td>
+                            <td>{{ producto.codigo }}</td>
+                            <td>{{ producto.nombre }}</td>
+                            <td>
+                                <a href="{{ url_for('productos_editar', id=producto.id_producto) }}" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                <a href="{{ url_for('productos_eliminar', id=producto.id_producto) }}" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
