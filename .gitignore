@@ -8,3 +8,5 @@ __pycache__/
 # Variables de entorno
 .env
 config.ini
+~$*
+

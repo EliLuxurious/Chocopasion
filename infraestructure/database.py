@@ -50,33 +50,118 @@ def conectar():
         raise
 
 # Dashboard principal
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
     conn = conectar()
     cursor = conn.cursor(dictionary=True)
 
-    # Datos para el gráfico de producción por producto
-    cursor.execute("""
+    # Filtros
+    fecha_inicio = request.form.get('fecha_inicio') if request.method == 'POST' else None
+    fecha_fin = request.form.get('fecha_fin') if request.method == 'POST' else None
+    producto = request.form.get('producto') if request.method == 'POST' else "0"
+    responsable = request.form.get('responsable') if request.method == 'POST' else "0"
+
+    # Productos y usuarios para los filtros
+    cursor.execute("SELECT * FROM productos ORDER BY nombre")
+    productos = cursor.fetchall()
+    cursor.execute("SELECT * FROM usuarios ORDER BY nombre, apellido")
+    usuarios = cursor.fetchall()
+
+    # Query base para producciones filtradas
+    query = """
+        SELECT pr.id_produccion, pr.fecha, p.nombre AS producto, pre.descripcion AS presentacion, pr.cantidad,
+               GROUP_CONCAT(CONCAT(u.nombre, ' ', u.apellido) SEPARATOR ', ') AS responsables_nombres
+        FROM produccion pr
+        JOIN productos p ON pr.id_producto = p.id_producto
+        JOIN presentaciones pre ON pr.id_presentacion = pre.id_presentacion
+        LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
+        LEFT JOIN usuarios u ON prr.id_usuario = u.id_usuario
+        WHERE 1=1
+    """
+    params = []
+
+    if fecha_inicio:
+        query += " AND pr.fecha >= %s"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND pr.fecha <= %s"
+        params.append(fecha_fin)
+    if producto and producto != "0":
+        query += " AND pr.id_producto = %s"
+        params.append(producto)
+    if responsable and responsable != "0":
+        query += " AND prr.id_usuario = %s"
+        params.append(responsable)
+
+    query += " GROUP BY pr.id_produccion ORDER BY pr.fecha DESC"
+
+    cursor.execute(query, params)
+    producciones = cursor.fetchall()
+
+    # Estadísticas generales (sin filtro)
+    cursor.execute("SELECT COUNT(*) AS total FROM productos")
+    total_productos = cursor.fetchone()['total']
+    cursor.execute("SELECT COUNT(*) AS total FROM usuarios")
+    total_usuarios = cursor.fetchone()['total']
+    cursor.execute("SELECT SUM(cantidad) AS total FROM produccion")
+    total_produccion = cursor.fetchone()['total'] or 0
+
+    # Gráfico de producción por producto (filtrado)
+    prod_chart_query = """
         SELECT p.nombre AS producto, SUM(pr.cantidad) AS total
         FROM produccion pr
         JOIN productos p ON pr.id_producto = p.id_producto
-        GROUP BY p.nombre
-    """)
+        LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
+        WHERE 1=1
+    """
+    prod_chart_params = []
+    if fecha_inicio:
+        prod_chart_query += " AND pr.fecha >= %s"
+        prod_chart_params.append(fecha_inicio)
+    if fecha_fin:
+        prod_chart_query += " AND pr.fecha <= %s"
+        prod_chart_params.append(fecha_fin)
+    if producto and producto != "0":
+        prod_chart_query += " AND pr.id_producto = %s"
+        prod_chart_params.append(producto)
+    if responsable and responsable != "0":
+        prod_chart_query += " AND prr.id_usuario = %s"
+        prod_chart_params.append(responsable)
+    prod_chart_query += " GROUP BY p.nombre"
+
+    cursor.execute(prod_chart_query, prod_chart_params)
     data = cursor.fetchall()
     labels = [row['producto'] for row in data]
     values = [row['total'] for row in data]
 
-    # Datos para estadísticas generales
-    cursor.execute("SELECT COUNT(*) AS total FROM productos")
-    total_productos = cursor.fetchone()['total']
+    # Gráfico de producción diaria (filtrado)
+    daily_chart_query = """
+        SELECT pr.fecha, SUM(pr.cantidad) AS total
+        FROM produccion pr
+        LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
+        WHERE 1=1
+    """
+    daily_chart_params = []
+    if fecha_inicio:
+        daily_chart_query += " AND pr.fecha >= %s"
+        daily_chart_params.append(fecha_inicio)
+    if fecha_fin:
+        daily_chart_query += " AND pr.fecha <= %s"
+        daily_chart_params.append(fecha_fin)
+    if producto and producto != "0":
+        daily_chart_query += " AND pr.id_producto = %s"
+        daily_chart_params.append(producto)
+    if responsable and responsable != "0":
+        daily_chart_query += " AND prr.id_usuario = %s"
+        daily_chart_params.append(responsable)
+    daily_chart_query += " GROUP BY pr.fecha ORDER BY pr.fecha"
 
-    cursor.execute("SELECT COUNT(*) AS total FROM usuarios")
-    total_usuarios = cursor.fetchone()['total']
+    cursor.execute(daily_chart_query, daily_chart_params)
+    daily_data = cursor.fetchall()
+    daily_labels = [row['fecha'].strftime('%Y-%m-%d') for row in daily_data]
+    daily_values = [row['total'] for row in daily_data]
 
-    cursor.execute("SELECT SUM(cantidad) AS total FROM produccion")
-    total_produccion = cursor.fetchone()['total'] or 0
-
-    # Últimas producciones
+    # Últimas producciones (sin filtro)
     cursor.execute("""
         SELECT pr.fecha, p.nombre AS producto, pre.descripcion AS presentacion, pr.cantidad
         FROM produccion pr
@@ -87,17 +172,36 @@ def index():
     """)
     ultimas_producciones = cursor.fetchall()
 
+    # Total cantidad filtrada
+    total_cantidad = sum(p['cantidad'] for p in producciones) if producciones else 0
+
     conn.close()
+
+    # Fechas por defecto para los filtros
+    from datetime import datetime
+    fecha_actual = datetime.now().strftime('%Y-%m-%d')
+    primer_dia_mes = datetime.now().replace(day=1).strftime('%Y-%m-%d')
 
     return render_template(
         "dashboard/index.html",
         labels=labels,
         values=values,
-        zip=zip,  # Añadimos zip para usarlo en las plantillas
+        daily_labels=daily_labels or [],
+        daily_values=daily_values or [],
+        zip=zip,
         total_productos=total_productos,
         total_usuarios=total_usuarios,
         total_produccion=total_produccion,
-        ultimas_producciones=ultimas_producciones
+        ultimas_producciones=ultimas_producciones,
+        productos=productos,
+        usuarios=usuarios,
+        fecha_inicio=fecha_inicio or primer_dia_mes,
+        fecha_fin=fecha_fin or fecha_actual,
+        producto_seleccionado=producto,
+        responsable_seleccionado=responsable,
+        producciones=producciones,
+        total_cantidad=total_cantidad,
+        mostrar_resultados=True if request.method == 'POST' else False
     )
 
 # NUEVA RUTA: Índice de producción (faltaba esta ruta)
@@ -765,33 +869,28 @@ def usuarios_editar(id):
 
     conn.close()
     return render_template("usuario/editar.html", usuario=usuario)
-@app.route('/usuarios/eliminar/<int:id>')
+
+
+@app.route('/usuarios/eliminar/<int:id>', methods=['GET', 'POST'])
 def usuarios_eliminar(id):
     conn = conectar()
-    cursor = conn.cursor()
-    try:
-        # Primero verificamos si hay producción asociada
-        cursor.execute(
-            "SELECT COUNT(*) FROM produccion WHERE responsables LIKE %s", (f'%{id}%',))
-        count = cursor.fetchone()[0]
-
-        if count > 0:
-            flash(
-                'No se puede eliminar el usuario porque tiene producción asociada', 'danger')
-        else:
-            cursor.execute("DELETE FROM usuarios WHERE id_usuario=%s", (id,))
+    cursor = conn.cursor(dictionary=True)
+    # Mostrar datos del usuario
+    cursor.execute("SELECT * FROM usuarios WHERE id_usuario = %s", (id,))
+    usuario = cursor.fetchone()
+    if request.method == 'POST':
+        try:
+            cursor.execute("DELETE FROM usuarios WHERE id_usuario = %s", (id,))
             conn.commit()
             flash('Usuario eliminado exitosamente', 'success')
-    except Error as err:
-        flash(f'Error al eliminar usuario: {err}', 'danger')
-    finally:
+            return redirect(url_for('usuarios_index'))
+        except Error as err:
+            flash(f'Error al eliminar usuario: {err}', 'danger')
+        finally:
+            conn.close()
+    else:
         conn.close()
-    return redirect(url_for('usuarios_index'))
-
-# Informes y reportes
-
-
-
+    return render_template("usuario/eliminar.html", usuario=usuario)
 
 if __name__ == '__main__':
     app.run(debug=True)

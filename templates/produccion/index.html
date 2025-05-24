@@ -73,15 +73,13 @@
                     <tbody>
                         {% for produccion in producciones %}
                         <tr>
-                            <td>{{ produccion.id }}</td>
+                            <td>{{ produccion.id_produccion }}</td>
                             <td>{{ produccion.fecha }}</td>
                             <td>{{ produccion.producto }}</td>
                             <td>{{ produccion.presentacion }}</td>
                             <td>{{ produccion.cantidad }}</td>
                             <td>
-                                {% for responsable in produccion.responsables %}
-                                    {{ responsable }}<br>
-                                {% endfor %}
+                                {{ produccion.responsables_nombres or 'Sin responsables' }}
                             </td>
                         </tr>
                         {% endfor %}

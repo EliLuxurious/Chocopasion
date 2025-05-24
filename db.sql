@@ -81,9 +81,16 @@ CREATE TABLE usuarios (
 
 -- Insertar usuarios de ejemplo
 INSERT INTO usuarios (nombre, apellido, email) VALUES
-('Elia', 'Aquino', 'elia.aquino@gmail.com'),
-('Mariela', 'Hernadez', 'mariela@gmail.com'),
-('Elia', 'Silva', 'elia.silva@gmail.com');
+('ELIA', 'AQUINO', 'elia.aquino@chocopasion.com'),
+('ELIA', 'SILVA', 'elia.silva@chocopasion.com'),
+('DARWIN', 'AQUINO','darwin.aquino@chocopasion.com'),
+('JACKELIN', 'AGUIRRE', 'jackelin.aguirre@chocopasion.com'),
+('GELEN', 'MANAYA', 'gelen.manya@chocopasion.com'),
+('ELENA', 'CASTRO','elena.castro@chocopasion.com'),
+('DENIS', 'POLINAR', 'denis.polinar@chocopasion.com'),
+('MARIELA', 'SILVA', 'mariela.silva@chocopasion.com'),
+('YONALA', 'GONZALES','yonala.castro@chocopasion.com'),
+;
 
 CREATE TABLE produccion_responsable (
     id_produccion INT NOT NULL,
