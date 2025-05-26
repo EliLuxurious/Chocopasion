@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Ver Producción - Chocopasión{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="welcome-header">
+        <h1>Detalles de Producción</h1>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5 class="card-title">Información General</h5>
+                    <table class="table">
+                        <tr>
+                            <th>ID:</th>
+                            <td>{{ produccion.id_produccion }}</td>
+                        </tr>
+                        <tr>
+                            <th>Fecha:</th>
+                            <td>{{ produccion.fecha.strftime('%d/%m/%Y') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Producto:</th>
+                            <td>{{ produccion.producto }}</td>
+                        </tr>
+                        <tr>
+                            <th>Presentación:</th>
+                            <td>{{ produccion.presentacion }}</td>
+                        </tr>
+                        <tr>
+                            <th>Cantidad:</th>
+                            <td>{{ produccion.cantidad }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="card-title">Responsables</h5>
+                    <ul class="list-group">
+                        {% for responsable in responsables %}
+                        <li class="list-group-item">
+                            {{ responsable.nombre }} {{ responsable.apellido }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('produccion_index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+                <div>
+                    <a href="{{ url_for('produccion_editar', id=produccion.id_produccion) }}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="{{ url_for('produccion_eliminar', id=produccion.id_produccion) }}" 
+                       class="btn btn-danger"
+                       onclick="return confirm('¿Está seguro de que desea eliminar esta producción?')">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

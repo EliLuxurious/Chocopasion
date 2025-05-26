@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio - Chocopasión{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Bienvenido a Chocopasión</h2>
+            
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-industry"></i> Producción
+                            </h5>
+                            <p class="card-text">Gestiona y registra la producción diaria de chocolates.</p>
+                            <a href="{{ url_for('produccion_index') }}" class="btn btn-primary">
+                                Ir a Producción
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-box"></i> Productos
+                            </h5>
+                            <p class="card-text">Consulta el catálogo de productos disponibles.</p>
+                            <a href="{{ url_for('productos_index') }}" class="btn btn-primary">
+                                Ver Productos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

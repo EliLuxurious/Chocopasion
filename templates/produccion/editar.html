@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Producción - Chocopasión{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="welcome-header">
+        <h1>Editar Producción</h1>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('produccion_editar', id=produccion.id_produccion) }}">
+                <div class="mb-3">
+                    <label for="fecha" class="form-label">Fecha</label>
+                    <input type="date" class="form-control" id="fecha" name="fecha" value="{{ produccion.fecha.strftime('%Y-%m-%d') }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="producto" class="form-label">Producto</label>
+                    <select class="form-select" id="producto" name="producto" required>
+                        <option value="">Seleccione un producto</option>
+                        {% for producto in productos %}
+                        <option value="{{ producto.id_producto }}" {% if producto.id_producto == produccion.id_producto %}selected{% endif %}>
+                            {{ producto.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="presentacion" class="form-label">Presentación</label>
+                    <select class="form-select" id="presentacion" name="presentacion" required>
+                        <option value="">Seleccione una presentación</option>
+                        {% for presentacion in presentaciones %}
+                        <option value="{{ presentacion.id_presentacion }}" {% if presentacion.id_presentacion == produccion.id_presentacion %}selected{% endif %}>
+                            {{ presentacion.descripcion }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="cantidad" class="form-label">Cantidad</label>
+                    <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" value="{{ produccion.cantidad }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Responsables</label>
+                    <div id="responsables-container">
+                        {% for responsable_id in responsables_ids %}
+                        <div class="input-group mb-2">
+                            <select name="responsables[]" class="form-select" required>
+                                <option value="">Seleccione un responsable</option>
+                                {% for responsable in responsables %}
+                                <option value="{{ responsable.id_responsable }}" {% if responsable.id_responsable|string == responsable_id %}selected{% endif %}>
+                                    {{ responsable.nombre }} {{ responsable.apellido }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if not loop.first %}
+                            <button type="button" class="btn btn-danger remove-responsable">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn btn-success add-responsable">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <small class="text-muted">Haz clic en el botón "+" para agregar más responsables.</small>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('produccion_index') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('responsables-container');
+    
+    // Función para crear un nuevo campo de responsable
+    function createResponsableField() {
+        const div = document.createElement('div');
+        div.className = 'input-group mb-2';
+        div.innerHTML = `
+            <select name="responsables[]" class="form-select" required>
+                <option value="">Seleccione un responsable</option>
+                {% for responsable in responsables %}
+                <option value="{{ responsable.id_responsable }}">{{ responsable.nombre }} {{ responsable.apellido }}</option>
+                {% endfor %}
+            </select>
+            <button type="button" class="btn btn-danger remove-responsable">
+                <i class="fas fa-minus"></i>
+            </button>
+        `;
+        return div;
+    }
+
+    // Agregar nuevo responsable
+    container.addEventListener('click', function(e) {
+        if (e.target.closest('.add-responsable')) {
+            container.appendChild(createResponsableField());
+        }
+    });
+
+    // Eliminar responsable
+    container.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-responsable')) {
+            const field = e.target.closest('.input-group');
+            if (container.children.length > 1) {
+                field.remove();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
