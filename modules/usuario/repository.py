@@ -17,3 +17,6 @@ class UsuarioRepository:
         if usuario:
             session.delete(usuario)
             session.commit()
+
+    def verificar_login(self, email, password):
+        return session.query(Usuario).filter_by(email=email, contraseña=password).first()

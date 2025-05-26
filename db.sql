@@ -2,7 +2,22 @@
 CREATE DATABASE chocopasion;
 USE chocopasion;
 
--- Tabla de productos
+-- ============================================
+-- 1. Tablas básicas sin dependencias
+-- ============================================
+
+-- Tabla de roles
+CREATE TABLE roles (
+    id_rol INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_rol VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- Tabla de presentaciones
+CREATE TABLE presentaciones (
+    id_presentacion INT AUTO_INCREMENT PRIMARY KEY,
+    descripcion VARCHAR(20) NOT NULL
+);
+
 -- Tabla de productos
 CREATE TABLE productos (
     id_producto INT AUTO_INCREMENT PRIMARY KEY,
@@ -11,7 +26,64 @@ CREATE TABLE productos (
     descripcion TEXT
 );
 
--- Insertar productos con códigos y descripciones
+-- Tabla de responsables
+CREATE TABLE responsables (
+    id_responsable INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE
+);
+
+-- ============================================
+-- 2. Tablas con dependencias
+-- ============================================
+
+-- Tabla de usuarios
+CREATE TABLE usuarios (
+    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    id_rol INT,
+    contraseña VARCHAR(255) NOT NULL,
+    FOREIGN KEY (id_rol) REFERENCES roles(id_rol)
+);
+
+-- Tabla de producción
+CREATE TABLE produccion (
+    id_produccion INT AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE NOT NULL,
+    id_producto INT NOT NULL,
+    id_presentacion INT NOT NULL,
+    cantidad INT NOT NULL CHECK (cantidad > 0),
+    FOREIGN KEY (id_producto) REFERENCES productos(id_producto),
+    FOREIGN KEY (id_presentacion) REFERENCES presentaciones(id_presentacion)
+);
+
+-- Tabla intermedia: relación producción-responsables
+CREATE TABLE produccion_responsable (
+    id_produccion INT NOT NULL,
+    id_responsable INT NOT NULL,
+    PRIMARY KEY (id_produccion, id_responsable),
+    FOREIGN KEY (id_produccion) REFERENCES produccion(id_produccion) ON DELETE CASCADE,
+    FOREIGN KEY (id_responsable) REFERENCES responsables(id_responsable) ON DELETE CASCADE
+);
+
+-- ============================================
+-- 3. Inserciones
+-- ============================================
+
+-- Insertar roles
+INSERT INTO roles (nombre_rol) VALUES
+('empleado'),
+('administrador');
+
+-- Insertar presentaciones
+INSERT INTO presentaciones (descripcion) VALUES
+('90 GR'), ('50 GR'), ('25 GR'), ('20 GR'),
+('1 KG'), ('0.5 KG'), ('0.25 KG'), ('0.15 KG');
+
+-- Insertar productos
 INSERT INTO productos (codigo, nombre, descripcion) VALUES
 ('SAB_COCO', 'COCO', 'Cacao 60%, coco'),
 ('SAB_AGUA', 'AGUAYMANTO', 'Cacao 60%, aguaymanto'),
@@ -43,61 +115,19 @@ INSERT INTO productos (codigo, nombre, descripcion) VALUES
 ('SUB_CASCA', 'CASCARILLA', 'Cáscara de grano de cacao tostado'),
 ('INS_TOSTADO', 'CACAO TOSTADO', 'Grano de cacao 100% tostado');
 
--- Tabla de presentaciones
-CREATE TABLE presentaciones (
-    id_presentacion INT AUTO_INCREMENT PRIMARY KEY,
-    descripcion VARCHAR(20) NOT NULL
-);
+-- Insertar responsables
+INSERT INTO responsables (nombre, apellido, email) VALUES
+('ELIA', 'AQUINO', 'elia.aquino@chocopasion.com'),
+('ELIA', 'SILVA', 'elia.silva@chocopasion.com'),
+('DARWIN', 'AQUINO', 'darwin.aquino@chocopasion.com'),
+('JACKELIN', 'AGUIRRE', 'jackelin.aguirre@chocopasion.com'),
+('GELEN', 'MANYA', 'gelen.manya@chocopasion.com'),
+('ELENA', 'CASTRO', 'elena.castro@chocopasion.com'),
+('DENIS', 'POLINAR', 'denis.polinar@chocopasion.com'),
+('MARIELA', 'SILVA', 'mariela.silva@chocopasion.com'),
+('YONALA', 'GONZALES', 'yonala.castro@chocopasion.com');
 
--- Tabla de producción
-CREATE TABLE produccion (
-    id_produccion INT AUTO_INCREMENT PRIMARY KEY,
-    fecha DATE NOT NULL,
-    id_producto INT NOT NULL,
-    id_presentacion INT NOT NULL,
-    cantidad INT NOT NULL,
-    responsables TEXT,
-    FOREIGN KEY (id_producto) REFERENCES productos(id_producto),
-    FOREIGN KEY (id_presentacion) REFERENCES presentaciones(id_presentacion)
-);
-
--- Insertar presentaciones
-INSERT INTO presentaciones (descripcion) VALUES
-('90 GR'),
-('50 GR'),
-('25 GR'),
-('20 GR'),
-('1 KG'),
-('0.5 KG'),
-('0.25 KG'),
-('0.15 KG');
-
-
--- Crear tabla de roles
-CREATE TABLE roles (
-    id_rol INT AUTO_INCREMENT PRIMARY KEY,
-    nombre_rol VARCHAR(50) NOT NULL UNIQUE
-);
-
--- Insertar roles de ejemplo
-INSERT INTO roles (nombre_rol) VALUES
-('empleado'),
-('administrador');
-
--- Tabla de usuarios
-CREATE TABLE usuarios (
-    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    apellido VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE
-);
-
--- Modificar la tabla de usuarios para incluir la referencia a roles
-ALTER TABLE usuarios
-ADD COLUMN id_rol INT,
-ADD FOREIGN KEY (id_rol) REFERENCES roles(id_rol);
-
--- Insertar usuarios de ejemplo con roles
+-- Insertar usuarios (⚠ Recomendación: en producción, usa contraseñas encriptadas)
 INSERT INTO usuarios (nombre, apellido, email, id_rol, contraseña) VALUES
-('Empleado', 'Aquino', 'empleado@gmail.com', 1, 'contraseña_empleado'), -- 1 es el id_rol para 'empleado'
-('Administrador', 'Hernadez', 'admin@gmail.com', 2, 'contraseña_admin'); -- 2 es el id_rol para 'administrador'
+('Empleado', 'Stefan', 'empleado@gmail.com', 1, '123456789'),
+('Administrador', 'Helena', 'admin@gmail.com', 2, '987654321');

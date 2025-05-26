@@ -14,3 +14,6 @@ class UsuarioService:
 
     def eliminar_usuario(self, id_usuario):
         self.usuario_repository.eliminar(id_usuario)
+
+    def verificar_login(self, email, password):
+        return self.usuario_repository.verificar_login(email, password)
