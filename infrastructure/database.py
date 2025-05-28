@@ -10,6 +10,7 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.units import inch
+import base64
 
 # Set the correct template folder path
 template_dir = os.path.abspath(os.path.join(
@@ -32,7 +33,7 @@ def conectar():
             host='127.0.0.1',
             user='root',
             password='',
-            database='chocopasion',
+            database='chocopasion1',
             port=3306,
             auth_plugin='mysql_native_password'
         )
@@ -186,6 +187,8 @@ def index():
             producto_seleccionado="0",
             responsable_seleccionado="0",
             mostrar_resultados=False,
+            responsables_labels=[],         # <-- Agrega esto
+            responsables_values=[],         # <-- Y esto
             zip=zip
         )
 
@@ -230,13 +233,23 @@ def produccion_index():
         return redirect(url_for('home'))
 
 # NUEVA FUNCIONALIDAD: Exportar producción a CSV
-@app.route('/export/produccion/csv')
-def export_produccion_csv():
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment
+
+@app.route('/export/produccion/excel')
+def export_produccion_excel():
     try:
+        # Obtén los filtros desde la URL (GET)
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        producto_id = request.args.get('producto', '0')
+        responsable_id = request.args.get('responsable', '0')
+
         conn = conectar()
         cursor = conn.cursor(dictionary=True)
-        
-        cursor.execute("""
+
+        # Aplica los mismos filtros que en dashboard_filtrar
+        query = """
             SELECT pr.fecha, p.nombre AS producto, pre.descripcion AS presentacion, pr.cantidad,
                    GROUP_CONCAT(CONCAT(r.nombre, ' ', r.apellido) SEPARATOR ', ') AS responsables_nombres
             FROM produccion pr
@@ -244,49 +257,90 @@ def export_produccion_csv():
             JOIN presentaciones pre ON pr.id_presentacion = pre.id_presentacion
             LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
             LEFT JOIN responsables r ON prr.id_responsable = r.id_responsable
-            GROUP BY pr.id_produccion
-            ORDER BY pr.fecha DESC
-        """)
+            WHERE 1=1
+        """
+        params = []
+        if fecha_inicio:
+            query += " AND pr.fecha >= %s"
+            params.append(fecha_inicio)
+        if fecha_fin:
+            query += " AND pr.fecha <= %s"
+            params.append(fecha_fin)
+        if producto_id != '0':
+            query += " AND pr.id_producto = %s"
+            params.append(producto_id)
+        if responsable_id != '0':
+            query += " AND prr.id_responsable = %s"
+            params.append(responsable_id)
+        query += " GROUP BY pr.id_produccion ORDER BY pr.fecha DESC"
+
+        cursor.execute(query, params)
         producciones = cursor.fetchall()
         conn.close()
-        
-        # Crear archivo CSV en memoria
-        output = io.StringIO()
-        writer = csv.writer(output)
-        
+
+        # Crear archivo Excel en memoria
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Producción"
+
         # Escribir encabezados
-        writer.writerow(['Fecha', 'Producto', 'Presentación', 'Cantidad', 'Responsables'])
-        
-        # Escribir datos
+        headers = ['FECHA', 'PRODUCTO', 'PRESENTACION', 'CANTIDAD', 'RESPONSABLES']
+        ws.append(headers)
+        for cell in ws[1]:
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal='center')
+
+        # Escribir datos filtrados
         for produccion in producciones:
-            writer.writerow([
+            ws.append([
                 produccion['fecha'].strftime('%Y-%m-%d') if produccion['fecha'] else '',
                 produccion['producto'],
                 produccion['presentacion'],
                 produccion['cantidad'],
                 produccion['responsables_nombres'] or ''
             ])
-        
-        # Preparar respuesta
-        output.seek(0)
-        response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'text/csv'
-        response.headers['Content-Disposition'] = f'attachment; filename=produccion_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
-        
-        return response
-        
-    except Exception as e:
-        flash(f'Error al exportar CSV: {str(e)}', 'danger')
-        return redirect(url_for('index'))
 
+        # Ajustar ancho de columnas automáticamente
+        for column_cells in ws.columns:
+            length = max(len(str(cell.value)) for cell in column_cells)
+            ws.column_dimensions[column_cells[0].column_letter].width = length + 2
+
+        # Guardar en memoria
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        # Preparar respuesta
+        response = make_response(output.read())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename=produccion_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        return response
+
+    except Exception as e:
+        flash(f'Error al exportar Excel: {str(e)}', 'danger')
+        return redirect(url_for('index'))
+    
 # NUEVA FUNCIONALIDAD: Exportar producción a PDF
-@app.route('/export/produccion/pdf')
+@app.route('/export/produccion/pdf', methods=['POST'])
 def export_produccion_pdf():
     try:
+        data = request.get_json()
+        filters = data.get('filters', {})
+        products_img = data.get('productsImg')
+        daily_img = data.get('dailyImg')
+        resp_img = data.get('respImg')
+
+        # Procesa los filtros igual que en dashboard_filtrar
+        fecha_inicio = filters.get('fecha_inicio')
+        fecha_fin = filters.get('fecha_fin')
+        producto_id = filters.get('producto', '0')
+        responsable_id = filters.get('responsable', '0')
+
         conn = conectar()
         cursor = conn.cursor(dictionary=True)
-        
-        cursor.execute("""
+
+        # Consulta filtrada igual que en dashboard_filtrar
+        query = """
             SELECT pr.fecha, p.nombre AS producto, pre.descripcion AS presentacion, pr.cantidad,
                    GROUP_CONCAT(CONCAT(r.nombre, ' ', r.apellido) SEPARATOR ', ') AS responsables_nombres
             FROM produccion pr
@@ -294,62 +348,88 @@ def export_produccion_pdf():
             JOIN presentaciones pre ON pr.id_presentacion = pre.id_presentacion
             LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
             LEFT JOIN responsables r ON prr.id_responsable = r.id_responsable
-            GROUP BY pr.id_produccion
-            ORDER BY pr.fecha DESC
-        """)
+            WHERE 1=1
+        """
+        params = []
+        if fecha_inicio:
+            query += " AND pr.fecha >= %s"
+            params.append(fecha_inicio)
+        if fecha_fin:
+            query += " AND pr.fecha <= %s"
+            params.append(fecha_fin)
+        if producto_id and producto_id != "0":
+            query += " AND pr.id_producto = %s"
+            params.append(producto_id)
+        if responsable_id and responsable_id != "0":
+            query += " AND prr.id_responsable = %s"
+            params.append(responsable_id)
+        query += " GROUP BY pr.id_produccion ORDER BY pr.fecha DESC"
+
+        cursor.execute(query, params)
         producciones = cursor.fetchall()
-        
+        conn.close()
+
         # Calcular total
         total_cantidad = sum(p['cantidad'] for p in producciones)
-        conn.close()
-        
+
         # Crear PDF en memoria
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4)
-        
-        # Estilos
         styles = getSampleStyleSheet()
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=18,
-            spaceAfter=30,
-            alignment=1  # Centrado
-        )
-        
-        # Contenido
         story = []
-        
-        # Título
-        title = Paragraph("Reporte de Producción - ChocoPasión", title_style)
-        story.append(title)
-        
-        # Fecha de generación
-        fecha_reporte = Paragraph(f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal'])
-        story.append(fecha_reporte)
-        story.append(Spacer(1, 20))
-        
+
+        # Título y filtros
+        story.append(Paragraph("Reporte de Producción - ChocoPasión", styles['Title']))
+        story.append(Paragraph(f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
+        if fecha_inicio or fecha_fin or producto_id != "0" or responsable_id != "0":
+            filtros = f"<b>Filtros:</b> "
+            if fecha_inicio: filtros += f"Desde {fecha_inicio} "
+            if fecha_fin: filtros += f"Hasta {fecha_fin} "
+            if producto_id != "0": filtros += f" | Producto ID: {producto_id} "
+            if responsable_id != "0": filtros += f" | Responsable ID: {responsable_id} "
+            story.append(Paragraph(filtros, styles['Normal']))
+        story.append(Spacer(1, 12))
+
+        # Agrega las imágenes de los gráficos
+        from reportlab.platypus import Image
+        import re
+
+        def img_from_base64(data_url, width=500):
+            if not data_url: return None
+            header, encoded = data_url.split(",", 1)
+            img_bytes = io.BytesIO(base64.b64decode(encoded))
+            img = Image(img_bytes, width=width, height=width*0.5)
+            img.hAlign = 'CENTER'
+            return img
+
+        for img_data, title in [
+            (products_img, "Producción por Producto"),
+            (daily_img, "Producción Diaria"),
+            (resp_img, "Producción por Responsable")
+        ]:
+            if img_data:
+                story.append(Paragraph(title, styles['Heading3']))
+                img = img_from_base64(img_data)
+                if img:
+                    story.append(img)
+                    story.append(Spacer(1, 12))
+
         # Resumen
         resumen = Paragraph(f"<b>Total de registros:</b> {len(producciones)}<br/><b>Cantidad total producida:</b> {total_cantidad}", styles['Normal'])
         story.append(resumen)
         story.append(Spacer(1, 20))
-        
+
         # Tabla de datos
         if producciones:
-            # Encabezados
             data = [['Fecha', 'Producto', 'Presentación', 'Cantidad', 'Responsables']]
-            
-            # Datos
             for produccion in producciones:
                 data.append([
                     produccion['fecha'].strftime('%d/%m/%Y') if produccion['fecha'] else '',
-                    produccion['producto'][:20] + '...' if len(produccion['producto']) > 20 else produccion['producto'],
-                    produccion['presentacion'][:15] + '...' if len(produccion['presentacion']) > 15 else produccion['presentacion'],
+                    produccion['producto'],
+                    produccion['presentacion'],
                     str(produccion['cantidad']),
-                    (produccion['responsables_nombres'][:25] + '...') if produccion['responsables_nombres'] and len(produccion['responsables_nombres']) > 25 else (produccion['responsables_nombres'] or '')
+                    produccion['responsables_nombres'] or ''
                 ])
-            
-            # Crear tabla
             table = Table(data, colWidths=[1.2*inch, 1.8*inch, 1.5*inch, 0.8*inch, 2*inch])
             table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -363,26 +443,22 @@ def export_produccion_pdf():
                 ('FONTSIZE', (0, 1), (-1, -1), 8),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black)
             ]))
-            
             story.append(table)
         else:
-            no_data = Paragraph("No hay datos de producción para mostrar.", styles['Normal'])
-            story.append(no_data)
-        
-        # Generar PDF
+            story.append(Paragraph("No hay datos de producción para mostrar.", styles['Normal']))
+
         doc.build(story)
         buffer.seek(0)
-        
-        # Preparar respuesta
-        response = make_response(buffer.read())
-        response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = f'attachment; filename=produccion_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
-        
-        return response
-        
+
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=f'produccion_filtrada_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf',
+            mimetype='application/pdf'
+        )
     except Exception as e:
-        flash(f'Error al exportar PDF: {str(e)}', 'danger')
-        return redirect(url_for('index'))
+        print(f"Error al exportar PDF: {str(e)}")
+        return "Error al exportar PDF", 500
 
 
 # Rutas para Producción
@@ -1029,6 +1105,8 @@ def dashboard():
             producto_seleccionado="0",
             responsable_seleccionado="0",
             mostrar_resultados=False,
+            responsables_labels=[],         # <-- Agrega esto
+            responsables_values=[],         # <-- Y esto
             zip=zip
         )
 
@@ -1038,7 +1116,7 @@ def dashboard():
     finally:
         conn.close()
 
-@app.route('/dashboard/filtrar', methods=['POST'])
+@app.route('/dashboard/filtrar', methods=['GET', 'POST'])
 def dashboard_filtrar():
     if 'usuario_id' not in session or session.get('rol') != 'administrador':
         flash('Debe iniciar sesión como administrador para acceder al dashboard', 'danger')
@@ -1096,15 +1174,21 @@ def dashboard_filtrar():
         primer_dia_mes = datetime.now().replace(day=1).strftime('%Y-%m-%d')
 
         # Obtener datos filtrados
-        fecha_inicio = request.form.get('fecha_inicio', primer_dia_mes)
-        fecha_fin = request.form.get('fecha_fin', fecha_actual)
-        producto_id = request.form.get('producto', '0')
-        responsable_id = request.form.get('responsable', '0')
+        if request.method == 'POST':
+            fecha_inicio = request.form.get('fecha_inicio', primer_dia_mes)
+            fecha_fin = request.form.get('fecha_fin', fecha_actual)
+            producto_id = request.form.get('producto', '0')
+            responsable_id = request.form.get('responsable', '0')
+        else:
+            fecha_inicio = request.args.get('fecha_inicio', primer_dia_mes)
+            fecha_fin = request.args.get('fecha_fin', fecha_actual)
+            producto_id = request.args.get('producto', '0')
+            responsable_id = request.args.get('responsable', '0')
 
         # Construir la consulta base
         query = """
             SELECT pr.fecha, p.nombre AS producto, pre.descripcion AS presentacion,
-                   pr.cantidad, GROUP_CONCAT(CONCAT(r.nombre, ' ', r.apellido) SEPARATOR ', ') AS responsables
+                pr.cantidad, GROUP_CONCAT(CONCAT(r.nombre, ' ', r.apellido) SEPARATOR ', ') AS responsables
             FROM produccion pr
             JOIN productos p ON pr.id_producto = p.id_producto
             JOIN presentaciones pre ON pr.id_presentacion = pre.id_presentacion
@@ -1136,6 +1220,171 @@ def dashboard_filtrar():
         producciones = cursor.fetchall()
         mostrar_resultados = True
 
+        # Obtener datos filtrados para la tabla y gráficos
+        # ...ya tienes la consulta principal...
+
+        # Nueva consulta para producción diaria filtrada
+        daily_query = """
+            SELECT DATE(pr.fecha) as dia, SUM(pr.cantidad) as total
+            FROM produccion pr
+            LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
+            WHERE 1=1
+        """
+        daily_params = []
+
+        if fecha_inicio:
+            daily_query += " AND pr.fecha >= %s"
+            daily_params.append(fecha_inicio)
+        if fecha_fin:
+            daily_query += " AND pr.fecha <= %s"
+            daily_params.append(fecha_fin)
+        if producto_id != '0':
+            daily_query += " AND pr.id_producto = %s"
+            daily_params.append(producto_id)
+        if responsable_id != '0':
+            daily_query += " AND prr.id_responsable = %s"
+            daily_params.append(responsable_id)
+
+        daily_query += " GROUP BY dia ORDER BY dia"
+
+        cursor.execute(daily_query, daily_params)
+        daily_data = cursor.fetchall()
+        daily_labels = [row['dia'].strftime('%d/%m') for row in daily_data]
+        daily_values = [row['total'] for row in daily_data]
+
+        # Producción por responsable
+        resp_query = """
+            SELECT CONCAT(r.nombre, ' ', r.apellido) as responsable, SUM(pr.cantidad) as total
+            FROM produccion pr
+            LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
+            LEFT JOIN responsables r ON prr.id_responsable = r.id_responsable
+            WHERE 1=1
+        """
+        resp_params = []
+        if fecha_inicio:
+            resp_query += " AND pr.fecha >= %s"
+            resp_params.append(fecha_inicio)
+        if fecha_fin:
+            resp_query += " AND pr.fecha <= %s"
+            resp_params.append(fecha_fin)
+        if producto_id != '0':
+            resp_query += " AND pr.id_producto = %s"
+            resp_params.append(producto_id)
+        if responsable_id != '0':
+            resp_query += " AND prr.id_responsable = %s"
+            resp_params.append(responsable_id)
+        resp_query += " GROUP BY responsable ORDER BY total DESC LIMIT 10"
+
+        cursor.execute(resp_query, resp_params)
+        resp_data = cursor.fetchall()
+        responsables_labels = [row['responsable'] or 'Sin asignar' for row in resp_data]
+        responsables_values = [row['total'] for row in resp_data]
+
+        # Consulta para Top de Productos y Producción por Producto filtrados
+        productos_query = """
+            SELECT p.nombre, SUM(pr.cantidad) as total
+            FROM produccion pr
+            JOIN productos p ON pr.id_producto = p.id_producto
+            JOIN presentaciones pre ON pr.id_presentacion = pre.id_presentacion
+            LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
+            LEFT JOIN responsables r ON prr.id_responsable = r.id_responsable
+            WHERE 1=1
+        """
+        productos_params = []
+
+        if fecha_inicio:
+            productos_query += " AND pr.fecha >= %s"
+            productos_params.append(fecha_inicio)
+        if fecha_fin:
+            productos_query += " AND pr.fecha <= %s"
+            productos_params.append(fecha_fin)
+        if producto_id != '0':
+            productos_query += " AND pr.id_producto = %s"
+            productos_params.append(producto_id)
+        if responsable_id != '0':
+            productos_query += " AND prr.id_responsable = %s"
+            productos_params.append(responsable_id)
+
+        productos_query += " GROUP BY p.id_producto, p.nombre ORDER BY total DESC LIMIT 5"
+
+        cursor.execute(productos_query, productos_params)
+        data = cursor.fetchall()
+        labels = [row['nombre'] for row in data]
+        values = [row['total'] for row in data]
+
+        # 1. Obtener página actual desde GET o POST
+        pagina_actual = int(request.args.get('pagina', 1))
+        por_pagina = 10
+        offset = (pagina_actual - 1) * por_pagina
+
+        # 2. Consulta para contar el total de resultados filtrados
+        count_query = """
+            SELECT COUNT(DISTINCT pr.id_produccion) as total
+            FROM produccion pr
+            JOIN productos p ON pr.id_producto = p.id_producto
+            JOIN presentaciones pre ON pr.id_presentacion = pre.id_presentacion
+            LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
+            LEFT JOIN responsables r ON prr.id_responsable = r.id_responsable
+            WHERE 1=1
+        """
+        count_params = list(params)  # Usa los mismos filtros que tu consulta principal
+
+        if fecha_inicio:
+            count_query += " AND pr.fecha >= %s"
+        if fecha_fin:
+            count_query += " AND pr.fecha <= %s"
+        if producto_id != '0':
+            count_query += " AND pr.id_producto = %s"
+        if responsable_id != '0':
+            count_query += " AND prr.id_responsable = %s"
+
+        cursor.execute(count_query, count_params)
+        total_resultados = cursor.fetchone()['total']
+        total_paginas = max(1, (total_resultados + por_pagina - 1) // por_pagina)
+
+        # 3. Consulta principal con LIMIT y OFFSET
+        query += f" LIMIT {por_pagina} OFFSET {offset}"
+        cursor.execute(query, params)
+        producciones = cursor.fetchall()
+
+        # 4. Construir query_string para mantener filtros en la URL
+        from urllib.parse import urlencode
+        filtros = {
+            'fecha_inicio': fecha_inicio,
+            'fecha_fin': fecha_fin,
+            'producto': producto_id,
+            'responsable': responsable_id
+        }
+        query_string = urlencode({k: v for k, v in filtros.items() if v and v != '0'})
+
+        # Consulta para producción total filtrada
+        total_query = """
+            SELECT SUM(pr.cantidad) as total
+            FROM produccion pr
+            JOIN productos p ON pr.id_producto = p.id_producto
+            JOIN presentaciones pre ON pr.id_presentacion = pre.id_presentacion
+            LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
+            LEFT JOIN responsables r ON prr.id_responsable = r.id_responsable
+            WHERE 1=1
+        """
+        total_params = []
+
+        if fecha_inicio:
+            total_query += " AND pr.fecha >= %s"
+            total_params.append(fecha_inicio)
+        if fecha_fin:
+            total_query += " AND pr.fecha <= %s"
+            total_params.append(fecha_fin)
+        if producto_id != '0':
+            total_query += " AND pr.id_producto = %s"
+            total_params.append(producto_id)
+        if responsable_id != '0':
+            total_query += " AND prr.id_responsable = %s"
+            total_params.append(responsable_id)
+
+        cursor.execute(total_query, total_params)
+        total_produccion_filtrada = cursor.fetchone()['total'] or 0
+
         return render_template(
             "dashboard/index.html",
             labels=labels,
@@ -1144,7 +1393,7 @@ def dashboard_filtrar():
             daily_values=daily_values,
             total_productos=total_productos,
             total_responsables=total_responsables,
-            total_produccion=total_produccion,
+            total_produccion=total_produccion_filtrada,
             productos=productos,
             responsables=responsables,
             fecha_inicio=fecha_inicio,
@@ -1153,14 +1402,19 @@ def dashboard_filtrar():
             responsable_seleccionado=responsable_id,
             mostrar_resultados=mostrar_resultados,
             producciones=producciones,
+            responsables_labels=responsables_labels,
+            responsables_values=responsables_values,
+            pagina_actual=pagina_actual,
+            total_paginas=total_paginas,
+            query_string=query_string,
             zip=zip
         )
 
     except Error as err:
-        flash(f'Error al cargar el dashboard: {str(err)}', 'danger')
-        return redirect(url_for('index'))
+            flash(f'Error al cargar el dashboard: {str(err)}', 'danger')
+            return redirect(url_for('index'))
     finally:
-        conn.close()
+            conn.close()
 
 @app.route('/logout')
 def logout():

@@ -13,12 +13,13 @@
                     <p class="text-muted">Bienvenido al panel de control de Chocopasión</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="{{ url_for('export_produccion_csv') }}" class="btn btn-outline-success">
-                        <i class="fas fa-file-csv me-2"></i>Exportar CSV
+                    <a href="{{ url_for('export_produccion_excel') }}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&producto={{ producto_seleccionado }}&responsable={{ responsable_seleccionado }}" class="btn btn-outline-success">
+                        <i class="fas fa-file-excel me-2"></i>Exportar Excel
                     </a>
-                    <a href="{{ url_for('export_produccion_pdf') }}" class="btn btn-outline-danger">
+                    <!-- Reemplaza el enlace PDF por este botón -->
+                    <button id="exportarPDF" class="btn btn-outline-danger" type="button">
                         <i class="fas fa-file-pdf me-2"></i>Exportar PDF
-                    </a>
+                    </button>
                 </div>
             </div>
         </div>
@@ -134,7 +135,7 @@
                 </div>
                 <div class="card-body">
                     <div class="chart-container" style="height: 300px;">
-                        <canvas id="productsChart"></canvas>
+                        <div id="productsChartPlotly" style="height: 300px;"></div>
                     </div>
                 </div>
             </div>
@@ -178,18 +179,33 @@
         </div>
         <div class="card-body">
             <div class="chart-container" style="height: 300px;">
-                <canvas id="dailyProductionChart"></canvas>
+                <div id="dailyProductionChartPlotly" style="height: 300px;"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Producción por Responsable Chart -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-user-friends text-primary me-2"></i>Producción por Responsable
+            </h5>
+        </div>
+        <div class="card-body">
+            <div id="responsablesChart" style="height: 350px;"></div>
         </div>
     </div>
 
     <!-- Filtered Results -->
     {% if mostrar_resultados %}
     <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white py-3">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0">
                 <i class="fas fa-list text-primary me-2"></i>Resultados del Filtro
             </h5>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-times me-1"></i>Quitar Filtro
+            </a>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -216,6 +232,28 @@
                     </tbody>
                 </table>
             </div>
+            <!-- PAGINACIÓN -->
+            <nav aria-label="Paginación de resultados" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if pagina_actual == 1 %}disabled{% endif %}">
+                        <a class="page-link"
+                           href="{{ url_for('dashboard_filtrar', pagina=pagina_actual-1) }}{% if query_string %}&{{ query_string }}{% endif %}">
+                            Anterior
+                        </a>
+                    </li>
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ pagina_actual }}
+                        </span>
+                    </li>
+                    <li class="page-item {% if pagina_actual == total_paginas %}disabled{% endif %}">
+                        <a class="page-link"
+                           href="{{ url_for('dashboard_filtrar', pagina=pagina_actual+1) }}{% if query_string %}&{{ query_string }}{% endif %}">
+                            Siguiente
+                        </a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
     {% endif %}
@@ -276,91 +314,100 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
     // Data from Flask
     const labels = {{ labels|tojson }};
     const values = {{ values|tojson }};
     const dailyLabels = {{ daily_labels|tojson }};
     const dailyValues = {{ daily_values|tojson }};
+    const responsablesLabels = {{ responsables_labels|tojson }};
+    const responsablesValues = {{ responsables_values|tojson }};
 
-    // Products chart
-    const productsCtx = document.getElementById('productsChart').getContext('2d');
-    new Chart(productsCtx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: values,
-                backgroundColor: [
-                    '#4361ee',
-                    '#3a0ca3',
-                    '#4cc9f0',
-                    '#4895ef',
-                    '#560bad'
-                ],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        usePointStyle: true
-                    }
-                }
-            },
-            cutout: '70%'
+    // Producción por Producto (Plotly)
+    const dataProducts = [{
+        labels: labels,
+        values: values,
+        type: 'pie',
+        hole: .5,
+        marker: {
+            colors: ['#4361ee', '#3a0ca3', '#4cc9f0', '#4895ef', '#560bad']
         }
-    });
+    }];
+    const layoutProducts = {
+        title: 'Producción por Producto',
+        showlegend: true,
+        margin: { t: 40 }
+    };
+    Plotly.newPlot('productsChartPlotly', dataProducts, layoutProducts, {responsive: true});
 
-    // Daily production chart
-    const dailyCtx = document.getElementById('dailyProductionChart').getContext('2d');
-    new Chart(dailyCtx, {
-        type: 'line',
-        data: {
-            labels: dailyLabels,
-            datasets: [{
-                label: 'Producción Diaria',
-                data: dailyValues,
-                borderColor: '#4361ee',
-                backgroundColor: 'rgba(67, 97, 238, 0.1)',
-                tension: 0.4,
-                borderWidth: 3,
-                pointBackgroundColor: '#fff',
-                pointBorderColor: '#4361ee',
-                pointBorderWidth: 2,
-                pointRadius: 4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        drawBorder: false,
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    }
-                }
-            }
-        }
+    // Producción Diaria (Plotly)
+    const dataDaily = [{
+        x: dailyLabels,
+        y: dailyValues,
+        type: 'scatter',
+        mode: 'lines+markers',
+        line: { color: '#4361ee', width: 3 },
+        marker: { color: '#fff', size: 8, line: { color: '#4361ee', width: 2 } },
+        fill: 'tozeroy',
+        fillcolor: 'rgba(67, 97, 238, 0.1)',
+        name: 'Producción Diaria'
+    }];
+    const layoutDaily = {
+        title: 'Producción Diaria',
+        xaxis: { title: 'Fecha' },
+        yaxis: { title: 'Cantidad', rangemode: 'tozero' },
+        margin: { t: 40 }
+    };
+    Plotly.newPlot('dailyProductionChartPlotly', dataDaily, layoutDaily, {responsive: true});
+
+    // Producción por Responsable (Plotly)
+    const dataResp = [{
+        x: responsablesLabels,
+        y: responsablesValues,
+        type: 'bar',
+        marker: {color: '#3a0ca3'}
+    }];
+    const layoutResp = {
+        title: 'Producción por Responsable',
+        xaxis: {title: 'Responsable'},
+        yaxis: {title: 'Cantidad'},
+        margin: {t: 40}
+    };
+    Plotly.newPlot('responsablesChart', dataResp, layoutResp, {responsive: true});
+
+    // Exportar PDF con Gráficos
+    document.getElementById('exportarPDF').addEventListener('click', async function() {
+        // Captura los gráficos como imágenes base64
+        const productsImg = await Plotly.toImage('productsChartPlotly', {format: 'png', width: 700, height: 350});
+        const dailyImg = await Plotly.toImage('dailyProductionChartPlotly', {format: 'png', width: 700, height: 350});
+        const respImg = await Plotly.toImage('responsablesChart', {format: 'png', width: 700, height: 350});
+
+        // Obtén los valores de los filtros actuales
+        const params = new URLSearchParams(new FormData(document.querySelector('form')));
+        // Envía las imágenes y los filtros al backend
+        fetch('{{ url_for("export_produccion_pdf") }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                filters: Object.fromEntries(params.entries()),
+                productsImg: productsImg,
+                dailyImg: dailyImg,
+                respImg: respImg
+            })
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            // Descarga el PDF generado
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'produccion_filtrada.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        });
     });
 </script>
 {% endblock %}

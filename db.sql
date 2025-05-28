@@ -1,6 +1,6 @@
 -- Crear base de datos
-CREATE DATABASE chocopasion;
-USE chocopasion;
+CREATE DATABASE chocopasion1;
+USE chocopasion1;
 
 -- ============================================
 -- 1. Tablas básicas sin dependencias
@@ -81,7 +81,7 @@ INSERT INTO roles (nombre_rol) VALUES
 -- Insertar presentaciones
 INSERT INTO presentaciones (descripcion) VALUES
 ('90 GR'), ('50 GR'), ('25 GR'), ('20 GR'),
-('1 KG'), ('0.5 KG'), ('0.25 KG'), ('0.15 KG');
+('1 KG'), ('0.5 KG'), ('0.25 KG'), ('0.15 KG'), ('UNIDAD');
 
 -- Insertar productos
 INSERT INTO productos (codigo, nombre, descripcion) VALUES
@@ -91,13 +91,13 @@ INSERT INTO productos (codigo, nombre, descripcion) VALUES
 ('SUB_CAFE', 'NIBS DE CAFÉ', 'Cacao 60%, café'),
 ('SAB_LECHE', 'LECHE', 'Cacao 60%, leche'),
 ('SAB_CAFELE', 'CAFÉ CON LECHE', 'Cacao 60%, leche, café'),
-('OSC_BIT60', 'BITTER 60 %', '60% cacao'),
-('OSC_BIT80', 'BITTER 80 %', '80% cacao'),
-('OSC_BIT82', 'BITTER 82 %', '82% cacao'),
-('OSC_BIT75', 'BITTER 75 %', '75% cacao'),
+('OSC_BIT60', 'BITTER 60%', '60% cacao'),
+('OSC_BIT80', 'BITTER 80%', '80% cacao'),
+('OSC_BIT82', 'BITTER 82%', '82% cacao'),
+('OSC_BIT75', 'BITTER 75%', '75% cacao'),
 ('SAB_MANI', 'MANI', 'Cacao 60%, maní'),
 ('SAB_CAMU', 'CAMU CAMU', 'Cacao 60%, camu camu'),
-('PURO_100', 'PASTA 100 %', '100% cacao (para taza)'),
+('PURO_100', 'PASTA 100%', '100% cacao (para taza)'),
 ('DER_MANT', 'MANTECA', 'Grasa natural del cacao'),
 ('DER_POLVO', 'POLVO', 'Polvo de cacao'),
 ('SOL_CHUCHO', 'CHUPETE CHOCOLATE', 'Cacao 60%, molde en chupete'),
@@ -106,7 +106,7 @@ INSERT INTO productos (codigo, nombre, descripcion) VALUES
 ('SAB_MLECHE', 'MANI CON LECHE', 'Cacao 60%, maní, leche'),
 ('SAB_ARAND', 'ARANDANO', 'Cacao 60%, arandano'),
 ('SAB_NARAN', 'NARANJA', 'Cacao 60%, naranja'),
-('OSC_PURO60', 'PURO 60 %', '60% cacao'),
+('OSC_PURO60', 'PURO 60%', '60% cacao'),
 ('SAB_SALQUI', 'SAL Y QUINUA', 'Cacao 60%, sal, quinua'),
 ('SAB_LECHE45', 'LECHE 45%', 'Cacao 45%, leche'),
 ('SAB_PIÑA', 'PIÑA', 'Cacao 60%, piña'),
