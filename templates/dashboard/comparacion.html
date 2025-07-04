@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Comparación de Períodos - Chocopasión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">Comparación de Períodos</h1>
+                    <p class="text-muted">Análisis comparativo para toma de decisiones</p>
+                </div>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de Comparación -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Diferencia en Producción</h6>
+                    <h2 class="{% if diferencia_produccion > 0 %}text-success{% elif diferencia_produccion < 0 %}text-danger{% else %}text-muted{% endif %}">
+                        {% if diferencia_produccion > 0 %}+{% endif %}{{ diferencia_produccion }}
+                    </h2>
+                    <small class="text-muted">unidades</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Cambio Porcentual</h6>
+                    <h2 class="{% if porcentaje_cambio > 0 %}text-success{% elif porcentaje_cambio < 0 %}text-danger{% else %}text-muted{% endif %}">
+                        {% if porcentaje_cambio > 0 %}+{% endif %}{{ "%.1f"|format(porcentaje_cambio) }}%
+                    </h2>
+                    <small class="text-muted">vs período anterior</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Período 1</h6>
+                    <h3 class="text-primary">{{ stats_periodo1.total_produccion or 0 }}</h3>
+                    <small class="text-muted">{{ periodo1_inicio }} a {{ periodo1_fin }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Período 2</h6>
+                    <h3 class="text-info">{{ stats_periodo2.total_produccion or 0 }}</h3>
+                    <small class="text-muted">{{ periodo2_inicio }} a {{ periodo2_fin }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Comparación -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-chart-line text-primary me-2"></i>Tendencia Comparativa
+            </h5>
+        </div>
+        <div class="card-body">
+            <div id="comparacionChart" style="height: 400px;"></div>
+        </div>
+    </div>
+
+    <!-- Tablas de Top Productos -->
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Top Productos - Período 1</h5>
+                    <small>{{ periodo1_inicio }} a {{ periodo1_fin }}</small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-end">Cantidad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in top_productos_p1 %}
+                                <tr>
+                                    <td>{{ producto.nombre }}</td>
+                                    <td class="text-end">{{ producto.total }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Top Productos - Período 2</h5>
+                    <small>{{ periodo2_inicio }} a {{ periodo2_fin }}</small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-end">Cantidad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in top_productos_p2 %}
+                                <tr>
+                                    <td>{{ producto.nombre }}</td>
+                                    <td class="text-end">{{ producto.total }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recomendaciones -->
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+                <i class="fas fa-lightbulb me-2"></i>Recomendaciones para Toma de Decisiones
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    {% if porcentaje_cambio > 10 %}
+                    <div class="alert alert-success">
+                        <strong>📈 Crecimiento Positivo:</strong> La producción ha aumentado significativamente ({{ "%.1f"|format(porcentaje_cambio) }}%). Considera:
+                        <ul class="mb-0 mt-2">
+                            <li>Aumentar la capacidad de producción</li>
+                            <li>Optimizar la cadena de suministro</li>
+                            <li>Analizar demanda futura</li>
+                        </ul>
+                    </div>
+                    {% elif porcentaje_cambio < -10 %}
+                    <div class="alert alert-danger">
+                        <strong>📉 Descenso Significativo:</strong> La producción ha disminuido ({{ "%.1f"|format(porcentaje_cambio) }}%). Revisa:
+                        <ul class="mb-0 mt-2">
+                            <li>Factores que afectan la producción</li>
+                            <li>Estrategias de recuperación</li>
+                            <li>Análisis de costos</li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <strong>📊 Producción Estable:</strong> El cambio es moderado ({{ "%.1f"|format(porcentaje_cambio) }}%). Mantén:
+                        <ul class="mb-0 mt-2">
+                            <li>Procesos actuales</li>
+                            <li>Monitoreo continuo</li>
+                            <li>Mejoras incrementales</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <div class="alert alert-light border">
+                        <strong>🎯 Próximas Acciones:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Analizar productos de mayor/menor rendimiento</li>
+                            <li>Revisar eficiencia por responsable</li>
+                            <li>Planificar objetivos del próximo período</li>
+                            <li>Evaluar necesidades de capacitación</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+    // Datos de tendencias
+    const tendencia1 = {{ tendencia_p1|tojson }};
+    const tendencia2 = {{ tendencia_p2|tojson }};
+    
+    const trace1 = {
+        x: tendencia1.map(d => d.dia),
+        y: tendencia1.map(d => d.total),
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Período 1',
+        line: { color: '#0d6efd' }
+    };
+    
+    const trace2 = {
+        x: tendencia2.map(d => d.dia),
+        y: tendencia2.map(d => d.total),
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Período 2',
+        line: { color: '#0dcaf0' }
+    };
+    
+    const layout = {
+        title: 'Comparación de Tendencias de Producción',
+        xaxis: { title: 'Fecha' },
+        yaxis: { title: 'Cantidad Producida' },
+        margin: { t: 40 }
+    };
+    
+    Plotly.newPlot('comparacionChart', [trace1, trace2], layout, {responsive: true});
+</script>
+{% endblock %}

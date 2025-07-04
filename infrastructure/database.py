@@ -11,6 +11,14 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.units import inch
 import base64
+import sys
+
+# Agregar el directorio padre al path para poder importar los módulos
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Importar los blueprints de ventas y precios
+from modules.ventas.controller import ventas_bp
+from modules.precios.controller import precios_bp
 
 # Set the correct template folder path
 template_dir = os.path.abspath(os.path.join(
@@ -26,6 +34,10 @@ app = Flask(__name__,
 # Secret key for session management and flash messages
 app.secret_key = 'chocopasion_secretkey'
 
+# Registrar los blueprints de ventas y precios
+app.register_blueprint(ventas_bp, url_prefix='/ventas')
+app.register_blueprint(precios_bp, url_prefix='/precios')
+
 def conectar():
     try:
         print("Intentando conectar a la base de datos...")
@@ -33,7 +45,7 @@ def conectar():
             host='127.0.0.1',
             user='root',
             password='',
-            database='chocopasion1',
+            database='chocopasion2',
             port=3306,
             auth_plugin='mysql_native_password'
         )
@@ -339,7 +351,7 @@ def export_produccion_pdf():
         conn = conectar()
         cursor = conn.cursor(dictionary=True)
 
-        # Consulta filtrada igual que en dashboard_filtrar
+        # Consulta filtrada igual que in dashboard_filtrar
         query = """
             SELECT pr.fecha, p.nombre AS producto, pre.descripcion AS presentacion, pr.cantidad,
                    GROUP_CONCAT(CONCAT(r.nombre, ' ', r.apellido) SEPARATOR ', ') AS responsables_nombres
@@ -1116,7 +1128,7 @@ def dashboard():
     finally:
         conn.close()
 
-@app.route('/dashboard/filtrar', methods=['GET', 'POST'])
+@app.route('/dashboard/filtrar', methods=['GET'])  # Solo GET
 def dashboard_filtrar():
     if 'usuario_id' not in session or session.get('rol') != 'administrador':
         flash('Debe iniciar sesión como administrador para acceder al dashboard', 'danger')
@@ -1126,104 +1138,57 @@ def dashboard_filtrar():
     cursor = conn.cursor(dictionary=True)
 
     try:
-        # Obtener datos para el gráfico de producción por producto
-        cursor.execute("""
-            SELECT p.nombre, SUM(pr.cantidad) as total
-            FROM produccion pr
-            JOIN productos p ON pr.id_producto = p.id_producto
-            GROUP BY p.id_producto, p.nombre
-            ORDER BY total DESC
-            LIMIT 5
-        """)
-        data = cursor.fetchall()
-        labels = [row['nombre'] for row in data]
-        values = [row['total'] for row in data]
-
-        # Datos para el gráfico de producción diaria
-        cursor.execute("""
-            SELECT DATE(fecha) as dia, SUM(cantidad) as total
-            FROM produccion
-            WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-            GROUP BY DATE(fecha)
-            ORDER BY dia
-        """)
-        daily_data = cursor.fetchall()
-        daily_labels = [row['dia'].strftime('%d/%m') for row in daily_data]
-        daily_values = [row['total'] for row in daily_data]
-
-        # Datos para estadísticas generales
-        cursor.execute("SELECT COUNT(*) AS total FROM productos")
-        total_productos = cursor.fetchone()['total'] or 0
-
-        cursor.execute("SELECT COUNT(*) AS total FROM responsables")
-        total_responsables = cursor.fetchone()['total'] or 0
-
-        cursor.execute("SELECT COALESCE(SUM(cantidad), 0) AS total FROM produccion")
-        total_produccion = cursor.fetchone()['total'] or 0
-
-        # Obtener lista de productos para el filtro
-        cursor.execute("SELECT * FROM productos ORDER BY nombre")
-        productos = cursor.fetchall()
-
-        # Obtener lista de responsables para el filtro
-        cursor.execute("SELECT * FROM responsables ORDER BY nombre, apellido")
-        responsables = cursor.fetchall()
-
         # Obtener fecha actual y primer día del mes
         fecha_actual = datetime.now().strftime('%Y-%m-%d')
         primer_dia_mes = datetime.now().replace(day=1).strftime('%Y-%m-%d')
 
-        # Obtener datos filtrados
-        if request.method == 'POST':
-            fecha_inicio = request.form.get('fecha_inicio', primer_dia_mes)
-            fecha_fin = request.form.get('fecha_fin', fecha_actual)
-            producto_id = request.form.get('producto', '0')
-            responsable_id = request.form.get('responsable', '0')
-        else:
-            fecha_inicio = request.args.get('fecha_inicio', primer_dia_mes)
-            fecha_fin = request.args.get('fecha_fin', fecha_actual)
-            producto_id = request.args.get('producto', '0')
-            responsable_id = request.args.get('responsable', '0')
+        # Obtener filtros desde URL (GET)
+        fecha_inicio = request.args.get('fecha_inicio', primer_dia_mes)
+        fecha_fin = request.args.get('fecha_fin', fecha_actual)
+        producto_id = request.args.get('producto', '0')
+        responsable_id = request.args.get('responsable', '0')
 
-        # Construir la consulta base
-        query = """
-            SELECT pr.fecha, p.nombre AS producto, pre.descripcion AS presentacion,
-                pr.cantidad, GROUP_CONCAT(CONCAT(r.nombre, ' ', r.apellido) SEPARATOR ', ') AS responsables
+        # Obtener listas para los selectores
+        cursor.execute("SELECT * FROM productos ORDER BY nombre")
+        productos = cursor.fetchall()
+        cursor.execute("SELECT * FROM responsables ORDER BY nombre, apellido")
+        responsables = cursor.fetchall()
+
+        # Datos para estadísticas generales (sin filtrar)
+        cursor.execute("SELECT COUNT(*) AS total FROM productos")
+        total_productos = cursor.fetchone()['total'] or 0
+        cursor.execute("SELECT COUNT(*) AS total FROM responsables")
+        total_responsables = cursor.fetchone()['total'] or 0
+
+        # 1. Top de Productos FILTRADOS (CORREGIDO)
+        productos_query = """
+            SELECT p.nombre, SUM(DISTINCT pr.cantidad) as total
             FROM produccion pr
             JOIN productos p ON pr.id_producto = p.id_producto
-            JOIN presentaciones pre ON pr.id_presentacion = pre.id_presentacion
             LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
-            LEFT JOIN responsables r ON prr.id_responsable = r.id_responsable
             WHERE 1=1
         """
-        params = []
-
+        productos_params = []
         if fecha_inicio:
-            query += " AND pr.fecha >= %s"
-            params.append(fecha_inicio)
-
+            productos_query += " AND pr.fecha >= %s"
+            productos_params.append(fecha_inicio)
         if fecha_fin:
-            query += " AND pr.fecha <= %s"
-            params.append(fecha_fin)
-
+            productos_query += " AND pr.fecha <= %s"
+            productos_params.append(fecha_fin)
         if producto_id != '0':
-            query += " AND pr.id_producto = %s"
-            params.append(producto_id)
-
+            productos_query += " AND pr.id_producto = %s"
+            productos_params.append(producto_id)
         if responsable_id != '0':
-            query += " AND prr.id_responsable = %s"
-            params.append(responsable_id)
+            productos_query += " AND prr.id_responsable = %s"
+            productos_params.append(responsable_id)
+        productos_query += " GROUP BY p.id_producto, p.nombre ORDER BY total DESC LIMIT 5"
 
-        query += " GROUP BY pr.id_produccion ORDER BY pr.fecha DESC"
+        cursor.execute(productos_query, productos_params)
+        data = cursor.fetchall()
+        labels = [row['nombre'] for row in data]
+        values = [row['total'] for row in data]
 
-        cursor.execute(query, params)
-        producciones = cursor.fetchall()
-        mostrar_resultados = True
-
-        # Obtener datos filtrados para la tabla y gráficos
-        # ...ya tienes la consulta principal...
-
-        # Nueva consulta para producción diaria filtrada
+        # 2. Producción diaria FILTRADA (CORREGIDO)
         daily_query = """
             SELECT DATE(pr.fecha) as dia, SUM(pr.cantidad) as total
             FROM produccion pr
@@ -1231,7 +1196,6 @@ def dashboard_filtrar():
             WHERE 1=1
         """
         daily_params = []
-
         if fecha_inicio:
             daily_query += " AND pr.fecha >= %s"
             daily_params.append(fecha_inicio)
@@ -1244,21 +1208,43 @@ def dashboard_filtrar():
         if responsable_id != '0':
             daily_query += " AND prr.id_responsable = %s"
             daily_params.append(responsable_id)
+        daily_query += " GROUP BY DATE(pr.fecha), pr.id_produccion ORDER BY dia"
 
-        daily_query += " GROUP BY dia ORDER BY dia"
+        # Mejor aún, usar subconsulta para evitar duplicados
+        daily_query_fixed = """
+            SELECT dia, SUM(cantidad) as total FROM (
+                SELECT DATE(pr.fecha) as dia, pr.cantidad
+                FROM produccion pr
+                LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
+                WHERE 1=1
+        """
+        if fecha_inicio:
+            daily_query_fixed += " AND pr.fecha >= %s"
+        if fecha_fin:
+            daily_query_fixed += " AND pr.fecha <= %s"
+        if producto_id != '0':
+            daily_query_fixed += " AND pr.id_producto = %s"
+        if responsable_id != '0':
+            daily_query_fixed += " AND prr.id_responsable = %s"
+        daily_query_fixed += """
+                GROUP BY pr.id_produccion, DATE(pr.fecha)
+            ) as subquery
+            GROUP BY dia ORDER BY dia
+        """
 
-        cursor.execute(daily_query, daily_params)
+        cursor.execute(daily_query_fixed, daily_params)
         daily_data = cursor.fetchall()
-        daily_labels = [row['dia'].strftime('%d/%m') for row in daily_data]
+        daily_labels = [row['dia'].strftime('%Y-%m-%d') for row in daily_data]
         daily_values = [row['total'] for row in daily_data]
 
-        # Producción por responsable
+        # 3. Producción por responsable FILTRADA (CORREGIDO)
         resp_query = """
-            SELECT CONCAT(r.nombre, ' ', r.apellido) as responsable, SUM(pr.cantidad) as total
-            FROM produccion pr
-            LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
-            LEFT JOIN responsables r ON prr.id_responsable = r.id_responsable
-            WHERE 1=1
+            SELECT responsable, SUM(cantidad) as total FROM (
+                SELECT CONCAT(r.nombre, ' ', r.apellido) as responsable, pr.cantidad
+                FROM produccion pr
+                LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
+                LEFT JOIN responsables r ON prr.id_responsable = r.id_responsable
+                WHERE 1=1
         """
         resp_params = []
         if fecha_inicio:
@@ -1273,102 +1259,26 @@ def dashboard_filtrar():
         if responsable_id != '0':
             resp_query += " AND prr.id_responsable = %s"
             resp_params.append(responsable_id)
-        resp_query += " GROUP BY responsable ORDER BY total DESC LIMIT 10"
+        resp_query += """
+                GROUP BY pr.id_produccion, responsable
+            ) as subquery
+            GROUP BY responsable ORDER BY total DESC LIMIT 10
+        """
 
         cursor.execute(resp_query, resp_params)
         resp_data = cursor.fetchall()
         responsables_labels = [row['responsable'] or 'Sin asignar' for row in resp_data]
         responsables_values = [row['total'] for row in resp_data]
 
-        # Consulta para Top de Productos y Producción por Producto filtrados
-        productos_query = """
-            SELECT p.nombre, SUM(pr.cantidad) as total
-            FROM produccion pr
-            JOIN productos p ON pr.id_producto = p.id_producto
-            JOIN presentaciones pre ON pr.id_presentacion = pre.id_presentacion
-            LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
-            LEFT JOIN responsables r ON prr.id_responsable = r.id_responsable
-            WHERE 1=1
-        """
-        productos_params = []
-
-        if fecha_inicio:
-            productos_query += " AND pr.fecha >= %s"
-            productos_params.append(fecha_inicio)
-        if fecha_fin:
-            productos_query += " AND pr.fecha <= %s"
-            productos_params.append(fecha_fin)
-        if producto_id != '0':
-            productos_query += " AND pr.id_producto = %s"
-            productos_params.append(producto_id)
-        if responsable_id != '0':
-            productos_query += " AND prr.id_responsable = %s"
-            productos_params.append(responsable_id)
-
-        productos_query += " GROUP BY p.id_producto, p.nombre ORDER BY total DESC LIMIT 5"
-
-        cursor.execute(productos_query, productos_params)
-        data = cursor.fetchall()
-        labels = [row['nombre'] for row in data]
-        values = [row['total'] for row in data]
-
-        # 1. Obtener página actual desde GET o POST
-        pagina_actual = int(request.args.get('pagina', 1))
-        por_pagina = 10
-        offset = (pagina_actual - 1) * por_pagina
-
-        # 2. Consulta para contar el total de resultados filtrados
-        count_query = """
-            SELECT COUNT(DISTINCT pr.id_produccion) as total
-            FROM produccion pr
-            JOIN productos p ON pr.id_producto = p.id_producto
-            JOIN presentaciones pre ON pr.id_presentacion = pre.id_presentacion
-            LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
-            LEFT JOIN responsables r ON prr.id_responsable = r.id_responsable
-            WHERE 1=1
-        """
-        count_params = list(params)  # Usa los mismos filtros que tu consulta principal
-
-        if fecha_inicio:
-            count_query += " AND pr.fecha >= %s"
-        if fecha_fin:
-            count_query += " AND pr.fecha <= %s"
-        if producto_id != '0':
-            count_query += " AND pr.id_producto = %s"
-        if responsable_id != '0':
-            count_query += " AND prr.id_responsable = %s"
-
-        cursor.execute(count_query, count_params)
-        total_resultados = cursor.fetchone()['total']
-        total_paginas = max(1, (total_resultados + por_pagina - 1) // por_pagina)
-
-        # 3. Consulta principal con LIMIT y OFFSET
-        query += f" LIMIT {por_pagina} OFFSET {offset}"
-        cursor.execute(query, params)
-        producciones = cursor.fetchall()
-
-        # 4. Construir query_string para mantener filtros en la URL
-        from urllib.parse import urlencode
-        filtros = {
-            'fecha_inicio': fecha_inicio,
-            'fecha_fin': fecha_fin,
-            'producto': producto_id,
-            'responsable': responsable_id
-        }
-        query_string = urlencode({k: v for k, v in filtros.items() if v and v != '0'})
-
-        # Consulta para producción total filtrada
+        # 4. Total de producción FILTRADO (CORREGIDO)
         total_query = """
-            SELECT SUM(pr.cantidad) as total
-            FROM produccion pr
-            JOIN productos p ON pr.id_producto = p.id_producto
-            JOIN presentaciones pre ON pr.id_presentacion = pre.id_presentacion
-            LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
-            LEFT JOIN responsables r ON prr.id_responsable = r.id_responsable
-            WHERE 1=1
+            SELECT SUM(cantidad) as total FROM (
+                SELECT pr.cantidad
+                FROM produccion pr
+                LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
+                WHERE 1=1
         """
         total_params = []
-
         if fecha_inicio:
             total_query += " AND pr.fecha >= %s"
             total_params.append(fecha_inicio)
@@ -1381,9 +1291,81 @@ def dashboard_filtrar():
         if responsable_id != '0':
             total_query += " AND prr.id_responsable = %s"
             total_params.append(responsable_id)
+        total_query += """
+                GROUP BY pr.id_produccion
+            ) as subquery
+        """
 
         cursor.execute(total_query, total_params)
         total_produccion_filtrada = cursor.fetchone()['total'] or 0
+
+        # 5. Tabla de resultados con paginación
+        pagina_actual = int(request.args.get('pagina', 1))
+        por_pagina = 10
+        offset = (pagina_actual - 1) * por_pagina
+
+        # Consulta principal para la tabla
+        query = """
+            SELECT pr.fecha, p.nombre AS producto, pre.descripcion AS presentacion,
+                pr.cantidad, GROUP_CONCAT(CONCAT(r.nombre, ' ', r.apellido) SEPARATOR ', ') AS responsables
+            FROM produccion pr
+            JOIN productos p ON pr.id_producto = p.id_producto
+            JOIN presentaciones pre ON pr.id_presentacion = pre.id_presentacion
+            LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
+            LEFT JOIN responsables r ON prr.id_responsable = r.id_responsable
+            WHERE 1=1
+        """
+        params = []
+        if fecha_inicio:
+            query += " AND pr.fecha >= %s"
+            params.append(fecha_inicio)
+        if fecha_fin:
+            query += " AND pr.fecha <= %s"
+            params.append(fecha_fin)
+        if producto_id != '0':
+            query += " AND pr.id_producto = %s"
+            params.append(producto_id)
+        if responsable_id != '0':
+            query += " AND prr.id_responsable = %s"
+            params.append(responsable_id)
+
+        # Contar total para paginación
+        count_query = """
+            SELECT COUNT(DISTINCT pr.id_produccion) as total
+            FROM produccion pr
+            LEFT JOIN produccion_responsable prr ON pr.id_produccion = prr.id_produccion
+            WHERE 1=1
+        """
+        if fecha_inicio:
+            count_query += " AND pr.fecha >= %s"
+        if fecha_fin:
+            count_query += " AND pr.fecha <= %s"
+        if producto_id != '0':
+            count_query += " AND pr.id_producto = %s"
+        if responsable_id != '0':
+            count_query += " AND prr.id_responsable = %s"
+
+        cursor.execute(count_query, params)
+        total_resultados = cursor.fetchone()['total']
+        total_paginas = max(1, (total_resultados + por_pagina - 1) // por_pagina)
+
+        # Ejecutar consulta con paginación
+        query += " GROUP BY pr.id_produccion ORDER BY pr.fecha DESC"
+        query += f" LIMIT {por_pagina} OFFSET {offset}"
+        cursor.execute(query, params)
+        producciones = cursor.fetchall()
+
+        # Query string para mantener filtros en paginación
+        from urllib.parse import urlencode
+        filtros = {
+            'fecha_inicio': fecha_inicio,
+            'fecha_fin': fecha_fin,
+            'producto': producto_id,
+            'responsable': responsable_id
+        }
+        query_string = urlencode({k: v for k, v in filtros.items() if v and v != '0'})
+
+        mostrar_resultados = True
 
         return render_template(
             "dashboard/index.html",
@@ -1411,11 +1393,123 @@ def dashboard_filtrar():
         )
 
     except Error as err:
-            flash(f'Error al cargar el dashboard: {str(err)}', 'danger')
-            return redirect(url_for('index'))
+        flash(f'Error al cargar el dashboard: {str(err)}', 'danger')
+        return redirect(url_for('index'))
     finally:
-            conn.close()
+        conn.close()
 
+@app.route('/dashboard/comparar', methods=['GET'])
+def dashboard_comparar():
+    if 'usuario_id' not in session or session.get('rol') != 'administrador':
+        flash('Debe iniciar sesión como administrador para acceder al dashboard', 'danger')
+        return redirect(url_for('login'))
+
+    conn = conectar()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # Obtener períodos de comparación
+        periodo1_inicio = request.args.get('periodo1_inicio')
+        periodo1_fin = request.args.get('periodo1_fin')
+        periodo2_inicio = request.args.get('periodo2_inicio')
+        periodo2_fin = request.args.get('periodo2_fin')
+
+        if not all([periodo1_inicio, periodo1_fin, periodo2_inicio, periodo2_fin]):
+            flash('Debe completar todos los campos de fecha para la comparación', 'warning')
+            return redirect(url_for('index'))
+
+        # PERÍODO 1 - Datos de producción
+        cursor.execute("""
+            SELECT 
+                SUM(cantidad) as total_produccion,
+                COUNT(DISTINCT id_producto) as productos_producidos,
+                COUNT(DISTINCT DATE(fecha)) as dias_activos,
+                AVG(cantidad) as promedio_diario
+            FROM produccion 
+            WHERE fecha BETWEEN %s AND %s
+        """, (periodo1_inicio, periodo1_fin))
+        stats_periodo1 = cursor.fetchone()
+
+        # Top productos período 1
+        cursor.execute("""
+            SELECT p.nombre, SUM(pr.cantidad) as total
+            FROM produccion pr
+            JOIN productos p ON pr.id_producto = p.id_producto
+            WHERE pr.fecha BETWEEN %s AND %s
+            GROUP BY p.id_producto, p.nombre
+            ORDER BY total DESC LIMIT 5
+        """, (periodo1_inicio, periodo1_fin))
+        top_productos_p1 = cursor.fetchall()
+
+        # PERÍODO 2 - Datos de producción
+        cursor.execute("""
+            SELECT 
+                SUM(cantidad) as total_produccion,
+                COUNT(DISTINCT id_producto) as productos_producidos,
+                COUNT(DISTINCT DATE(fecha)) as dias_activos,
+                AVG(cantidad) as promedio_diario
+            FROM produccion 
+            WHERE fecha BETWEEN %s AND %s
+        """, (periodo2_inicio, periodo2_fin))
+        stats_periodo2 = cursor.fetchone()
+
+        # Top productos período 2
+        cursor.execute("""
+            SELECT p.nombre, SUM(pr.cantidad) as total
+            FROM produccion pr
+            JOIN productos p ON pr.id_producto = p.id_producto
+            WHERE pr.fecha BETWEEN %s AND %s
+            GROUP BY p.id_producto, p.nombre
+            ORDER BY total DESC LIMIT 5
+        """, (periodo2_inicio, periodo2_fin))
+        top_productos_p2 = cursor.fetchall()
+
+        # Calcular diferencias y porcentajes
+        diferencia_produccion = (stats_periodo2['total_produccion'] or 0) - (stats_periodo1['total_produccion'] or 0)
+        porcentaje_cambio = 0
+        if stats_periodo1['total_produccion'] and stats_periodo1['total_produccion'] > 0:
+            porcentaje_cambio = (diferencia_produccion / stats_periodo1['total_produccion']) * 100
+
+        # Análisis de tendencias (por día)
+        cursor.execute("""
+            SELECT DATE(fecha) as dia, SUM(cantidad) as total
+            FROM produccion 
+            WHERE fecha BETWEEN %s AND %s
+            GROUP BY DATE(fecha)
+            ORDER BY dia
+        """, (periodo1_inicio, periodo1_fin))
+        tendencia_p1 = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT DATE(fecha) as dia, SUM(cantidad) as total
+            FROM produccion 
+            WHERE fecha BETWEEN %s AND %s
+            GROUP BY DATE(fecha)
+            ORDER BY dia
+        """, (periodo2_inicio, periodo2_fin))
+        tendencia_p2 = cursor.fetchall()
+
+        return render_template(
+            "dashboard/comparacion.html",
+            periodo1_inicio=periodo1_inicio,
+            periodo1_fin=periodo1_fin,
+            periodo2_inicio=periodo2_inicio,
+            periodo2_fin=periodo2_fin,
+            stats_periodo1=stats_periodo1,
+            stats_periodo2=stats_periodo2,
+            top_productos_p1=top_productos_p1,
+            top_productos_p2=top_productos_p2,
+            diferencia_produccion=diferencia_produccion,
+            porcentaje_cambio=porcentaje_cambio,
+            tendencia_p1=tendencia_p1,
+            tendencia_p2=tendencia_p2
+        )
+
+    except Exception as e:
+        flash(f'Error al realizar la comparación: {str(e)}', 'danger')
+        return redirect(url_for('index'))
+    finally:
+        conn.close()
 @app.route('/logout')
 def logout():
     session.clear()

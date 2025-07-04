@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Precio - Chocopasión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">Editar Precio</h1>
+                    <p class="text-muted">Modifica los datos del precio seleccionado</p>
+                </div>
+                <a href="{{ url_for('precios.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('precios.actualizar', id_precio=precio.id_precio) }}" id="formPrecio">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_producto" class="form-label">Producto *</label>
+                                    <select class="form-select" id="id_producto" name="id_producto" required>
+                                        <option value="">Seleccionar producto</option>
+                                        {% for producto in productos %}
+                                        <option value="{{ producto.id_producto }}" 
+                                                {% if producto.id_producto == precio.id_producto %}selected{% endif %}>
+                                            {{ producto.nombre }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_presentacion" class="form-label">Presentación *</label>
+                                    <select class="form-select" id="id_presentacion" name="id_presentacion" required>
+                                        <option value="">Seleccionar presentación</option>
+                                        {% for presentacion in presentaciones %}
+                                        <option value="{{ presentacion.id_presentacion }}" 
+                                                {% if presentacion.id_presentacion == precio.id_presentacion %}selected{% endif %}>
+                                            {{ presentacion.nombre }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="precio_unitario" class="form-label">Precio Unitario *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="precio_unitario" 
+                                               name="precio_unitario" step="0.01" min="0" required 
+                                               value="{{ precio.precio_unitario }}" placeholder="0.00">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Importante:</strong> Al modificar este precio, podrías afectar las ventas existentes que 
+                            dependen de esta configuración. Asegúrate de que los cambios sean correctos antes de guardar.
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-secondary me-md-2" onclick="history.back()">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Actualizar Precio
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación de fechas
+    const fechaInicio = document.getElementById('fecha_inicio');
+    const fechaFin = document.getElementById('fecha_fin');
+    
+    function validarFechas() {
+        if (fechaInicio.value && fechaFin.value) {
+            const inicio = new Date(fechaInicio.value);
+            const fin = new Date(fechaFin.value);
+            
+            if (inicio > fin) {
+                fechaFin.setCustomValidity('La fecha de fin no puede ser anterior a la fecha de inicio');
+            } else {
+                fechaFin.setCustomValidity('');
+            }
+        } else {
+            fechaFin.setCustomValidity('');
+        }
+    }
+    
+    fechaInicio.addEventListener('change', validarFechas);
+    fechaFin.addEventListener('change', validarFechas);
+    
+    // Validar al cargar la página
+    validarFechas();
+});
+
+// Validación del formulario antes del envío
+document.getElementById('formPrecio').addEventListener('submit', function(e) {
+    const precio = document.getElementById('precio_unitario').value;
+    
+    if (parseFloat(precio) <= 0) {
+        e.preventDefault();
+        alert('El precio debe ser mayor a 0');
+        return;
+    }
+    
+    // Validación adicional de fechas
+    const fechaInicio = document.getElementById('fecha_inicio').value;
+    const fechaFin = document.getElementById('fecha_fin').value;
+    
+    if (fechaInicio && fechaFin) {
+        const inicio = new Date(fechaInicio);
+        const fin = new Date(fechaFin);
+        
+        if (inicio > fin) {
+            e.preventDefault();
+            alert('La fecha de inicio no puede ser posterior a la fecha de fin');
+            return;
+        }
+    }
+});
+</script>
+{% endblock %}

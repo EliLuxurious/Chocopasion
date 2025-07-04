@@ -1,4 +1,4 @@
-<!-- filepath: c:\SI\Chocopasion\templates\produccion\agregar.html -->
+<!-- filepath: c:\XD\Chocopasion\templates\produccion\agregar.html -->
 {% extends "base.html" %}
 
 {% block title %}Agregar Producción - Chocopasión{% endblock %}
@@ -27,7 +27,7 @@
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <div class="form-floating mb-3">
-                                    <input type="date" class="form-control" id="fecha" name="fecha" required>
+                                    <input type="date" class="form-control" id="fecha" name="fecha" value="{{ fecha_actual }}" required>
                                     <label for="fecha">Fecha de Producción</label>
                                 </div>
                             </div>
@@ -68,10 +68,11 @@
                                     <div class="card-body">
                                         <h5 class="card-title mb-3">Responsables</h5>
                                         <div id="responsables-container">
-                                            <div class="row g-3 mb-3">
+                                            <!-- Primer campo de responsable -->
+                                            <div class="row g-3 mb-3 responsable-field">
                                                 <div class="col-md-11">
                                                     <div class="form-floating">
-                                                        <select class="form-select responsable-select" name="id_responsable" required>
+                                                        <select class="form-select responsable-select" name="responsables[]" required>
                                                             <option value="">Seleccione un responsable</option>
                                                             {% for responsable in responsables %}
                                                             <option value="{{ responsable.id_responsable }}">{{ responsable.nombre }} {{ responsable.apellido }}</option>
@@ -121,14 +122,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Función para crear un nuevo campo de responsable
     function createResponsableField() {
         const div = document.createElement('div');
-        div.className = 'row g-3 mb-3';
+        div.className = 'row g-3 mb-3 responsable-field';
         div.innerHTML = `
             <div class="col-md-11">
                 <div class="form-floating">
                     <select class="form-select responsable-select" name="responsables[]" required>
                         <option value="">Seleccione un responsable</option>
                         {% for responsable in responsables %}
-                        <option value="{{ responsable.id_usuario }}">{{ responsable.nombre }} {{ responsable.apellido }}</option>
+                        <option value="{{ responsable.id_responsable }}">{{ responsable.nombre }} {{ responsable.apellido }}</option>
                         {% endfor %}
                     </select>
                     <label>Responsable</label>
@@ -143,10 +144,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return div;
     }
 
-    // Mostrar botón de eliminar en el primer campo cuando hay más de uno
+    // Actualizar visibilidad de botones de eliminar
     function updateRemoveButtons() {
-        const fields = container.querySelectorAll('.row');
-        fields.forEach((field, index) => {
+        const fields = container.querySelectorAll('.responsable-field');
+        fields.forEach((field) => {
             const removeButton = field.querySelector('.remove-responsable');
             if (fields.length > 1) {
                 removeButton.style.display = 'block';
@@ -165,13 +166,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Eliminar responsable
     container.addEventListener('click', function(e) {
         if (e.target.closest('.remove-responsable')) {
-            const field = e.target.closest('.row');
-            if (container.children.length > 1) {
+            const field = e.target.closest('.responsable-field');
+            const fields = container.querySelectorAll('.responsable-field');
+            if (fields.length > 1) {
                 field.remove();
                 updateRemoveButtons();
             }
         }
     });
+
+    // Inicializar estado de botones
+    updateRemoveButtons();
 });
 </script>
 {% endblock %}

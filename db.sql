@@ -1,6 +1,7 @@
 -- Crear base de datos
-CREATE DATABASE chocopasion1;
-USE chocopasion1;
+CREATE DATABASE chocopasion2;
+USE chocopasion2;
+
 
 -- ============================================
 -- 1. Tablas básicas sin dependencias
@@ -131,3 +132,127 @@ INSERT INTO responsables (nombre, apellido, email) VALUES
 INSERT INTO usuarios (nombre, apellido, email, id_rol, contraseña) VALUES
 ('Empleado', 'Stefan', 'empleado@gmail.com', 1, '123456789'),
 ('Administrador', 'Helena', 'admin@gmail.com', 2, '987654321');
+
+
+-- ============================================
+-- 4. Tablas del Área de Ventas
+-- ============================================
+
+-- Tabla de precios por producto y presentación
+CREATE TABLE precios (
+    id_precio INT AUTO_INCREMENT PRIMARY KEY,
+    id_producto INT NOT NULL,
+    id_presentacion INT NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (id_producto) REFERENCES productos(id_producto),
+    FOREIGN KEY (id_presentacion) REFERENCES presentaciones(id_presentacion)
+);
+
+-- Tabla de ventas
+CREATE TABLE ventas (
+    id_venta INT AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE NOT NULL,
+    id_producto INT NOT NULL,
+    id_presentacion INT NOT NULL,
+    cantidad INT NOT NULL CHECK (cantidad > 0),
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    total DECIMAL(10,2) GENERATED ALWAYS AS (cantidad * precio_unitario) STORED,
+    FOREIGN KEY (id_producto) REFERENCES productos(id_producto),
+    FOREIGN KEY (id_presentacion) REFERENCES presentaciones(id_presentacion)
+);
+
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (1, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (1, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (1, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (1, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (2, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (2, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (2, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (2, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (3, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (3, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (3, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (3, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (4, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (4, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (4, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (4, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (5, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (5, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (5, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (5, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (6, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (6, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (6, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (6, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (7, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (7, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (7, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (7, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (8, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (8, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (8, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (8, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (9, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (9, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (9, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (9, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (10, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (10, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (10, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (10, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (11, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (11, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (11, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (11, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (12, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (12, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (12, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (12, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (13, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (13, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (13, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (13, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (14, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (14, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (14, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (14, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (15, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (15, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (15, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (15, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (16, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (16, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (16, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (16, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (17, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (17, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (17, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (17, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (18, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (18, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (18, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (18, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (19, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (19, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (19, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (19, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (20, 1, 14);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (20, 2, 8);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (20, 3, 5);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (20, 4, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (21, 6, 35);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (21, 7, 20);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (21, 5, 65);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (22, 6, 25);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (22, 5, 45);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (23, 7, 25);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (23, 8, 15);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (24, 9, 2);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (25, 9, 3);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (26, 6, 20);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (26, 5, 35);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (27, 6, 22);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (27, 5, 40);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (28, 7, 15);
+INSERT INTO precios (id_producto, id_presentacion, precio_unitario) VALUES (28, 6, 25);

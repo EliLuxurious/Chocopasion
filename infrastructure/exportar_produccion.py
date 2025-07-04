@@ -3,7 +3,7 @@ import mysql.connector
 import re
 
 # 1. Cargar Excel
-df = pd.read_excel(r"c:\SI\Chocopasion\chocopasion.xlsx")
+df = pd.read_excel(r"c:\XD\Chocopasion\chalinas_garcia.xlsx")
 df.columns = [col.strip().upper() for col in df.columns]
 
 # 2. Normalizar FECHA
