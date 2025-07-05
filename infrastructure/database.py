@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, make_response, send_file, session
+from flask import Flask, render_template, request, redirect, url_for, flash, make_response, send_file, session, jsonify
 import mysql.connector
 from mysql.connector import Error
 import os
@@ -168,8 +168,11 @@ def index():
         cursor.execute("SELECT COUNT(*) AS total FROM responsables")
         total_responsables = cursor.fetchone()['total'] or 0
 
-        cursor.execute("SELECT COALESCE(SUM(cantidad), 0) AS total FROM produccion")
+        # CORREGIDO: Total producción con filtro de 30 días para consistencia
+        cursor.execute("SELECT COALESCE(SUM(cantidad), 0) AS total FROM produccion WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")
         total_produccion = cursor.fetchone()['total'] or 0
+        
+        print(f"🔍 DASHBOARD INICIAL - Total producción (30 días): {total_produccion}")
 
         # Obtener lista de productos para el filtro
         cursor.execute("SELECT * FROM productos ORDER BY nombre")
@@ -182,6 +185,268 @@ def index():
         # Obtener fecha actual y primer día del mes
         fecha_actual = datetime.now().strftime('%Y-%m-%d')
         primer_dia_mes = datetime.now().replace(day=1).strftime('%Y-%m-%d')
+
+        # CONSULTAS PARA VENTAS - SIMPLIFICADAS CON FILTROS DE FECHA
+        print("🔍 Iniciando consultas de ventas...")
+        
+        # Verificar datos duplicados
+        try:
+            cursor.execute("SELECT COUNT(*) as total_ventas FROM ventas")
+            total_registros_ventas = cursor.fetchone()['total_ventas']
+            cursor.execute("SELECT COUNT(DISTINCT id_venta) as ventas_unicas FROM ventas")
+            ventas_unicas = cursor.fetchone()['ventas_unicas']
+            print(f"📊 Total registros ventas: {total_registros_ventas}, Únicos: {ventas_unicas}")
+            
+            if total_registros_ventas != ventas_unicas:
+                print("⚠️ ADVERTENCIA: Hay posibles duplicados en la tabla ventas")
+        except Exception as e:
+            print(f"❌ Error verificando duplicados: {e}")
+        
+        # Ventas por producto - CONSULTA DIRECTA SIN JOINS COMPLEJOS
+        try:
+            print("📊 Ejecutando consulta DIRECTA de ventas por producto...")
+            cursor.execute("""
+                SELECT 
+                    p.nombre, 
+                    (SELECT COALESCE(SUM(v.cantidad), 0) 
+                     FROM ventas v 
+                     WHERE v.id_producto = p.id_producto 
+                     AND v.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)) as total_vendido
+                FROM productos p
+                HAVING total_vendido > 0
+                ORDER BY total_vendido DESC
+                LIMIT 5
+            """)
+            ventas_data = cursor.fetchall()
+            ventas_labels = [row['nombre'] for row in ventas_data]
+            ventas_values = [int(row['total_vendido']) for row in ventas_data]
+            
+            print(f"✅ Ventas por producto (consulta directa): {len(ventas_data)} resultados")
+            print(f"📋 Labels: {ventas_labels}")
+            print(f"📋 Cantidades EXACTAS: {ventas_values}")
+            
+            # Verificación adicional - mostrar registros individuales para el primer producto
+            if ventas_labels:
+                cursor.execute("""
+                    SELECT fecha, cantidad, total 
+                    FROM ventas v 
+                    JOIN productos p ON v.id_producto = p.id_producto 
+                    WHERE p.nombre = %s 
+                    AND v.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                    ORDER BY fecha DESC
+                    LIMIT 5
+                """, (ventas_labels[0],))
+                registros_ejemplo = cursor.fetchall()
+                print(f"🔍 Registros individuales para '{ventas_labels[0]}':")
+                for reg in registros_ejemplo:
+                    print(f"   📅 {reg['fecha']}: {reg['cantidad']} unidades, ${reg['total']}")
+                    
+        except Exception as e:
+            print(f"❌ Error en ventas por producto: {e}")
+            ventas_labels = []
+            ventas_values = []
+
+        # Ventas diarias (últimos 7 días) - CORREGIDA
+        try:
+            print("📅 Ejecutando consulta de ventas diarias corregida...")
+            cursor.execute("""
+                SELECT DATE(fecha) as dia, SUM(cantidad) as total_vendido_dia
+                FROM ventas
+                WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                GROUP BY DATE(fecha)
+                ORDER BY dia
+            """)
+            ventas_diarias_data = cursor.fetchall()
+            ventas_diarias_labels = [row['dia'].strftime('%d/%m') for row in ventas_diarias_data]
+            ventas_diarias_values = [int(row['total_vendido_dia']) for row in ventas_diarias_data]  # Convertir a int
+            print(f"✅ Ventas diarias: {len(ventas_diarias_data)} resultados")
+            print(f"📋 Labels diarias: {ventas_diarias_labels}")
+            print(f"📋 Cantidades diarias: {ventas_diarias_values}")
+        except Exception as e:
+            print(f"❌ Error en ventas diarias: {e}")
+            ventas_diarias_labels = []
+            ventas_diarias_values = []
+
+        # Ingresos por producto - CON FILTRO DE FECHA
+        try:
+            print("💰 Ejecutando consulta de ingresos...")
+            cursor.execute("""
+                SELECT p.nombre, SUM(v.total) as ingresos
+                FROM ventas v
+                JOIN productos p ON v.id_producto = p.id_producto
+                WHERE v.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                GROUP BY p.id_producto, p.nombre
+                ORDER BY ingresos DESC
+                LIMIT 5
+            """)
+            ingresos_data = cursor.fetchall()
+            ingresos_labels = [row['nombre'] for row in ingresos_data]
+            ingresos_values = [float(row['ingresos']) for row in ingresos_data]
+            print(f"✅ Ingresos (último mes): {len(ingresos_data)} resultados")
+            print(f"📋 Ingresos labels: {ingresos_labels}")
+        except Exception as e:
+            print(f"❌ Error en ingresos por producto: {e}")
+            ingresos_labels = []
+            ingresos_values = []
+
+        # Comparativa producción vs ventas por producto - CORREGIDA CON FECHA
+        try:
+            print("⚖️ Ejecutando consulta comparativa corregida con filtro de fecha...")
+            
+            # Obtener fecha del último mes para evitar multiplicaciones
+            cursor.execute("SELECT DATE_SUB(CURDATE(), INTERVAL 30 DAY) as fecha_limite")
+            fecha_limite = cursor.fetchone()['fecha_limite']
+            
+            # Primero obtenemos la producción por producto (último mes)
+            cursor.execute("""
+                SELECT 
+                    p.id_producto,
+                    p.nombre,
+                    COALESCE(SUM(pr.cantidad), 0) as produccion_total
+                FROM productos p
+                LEFT JOIN produccion pr ON p.id_producto = pr.id_producto 
+                    AND pr.fecha >= %s
+                GROUP BY p.id_producto, p.nombre
+            """, (fecha_limite,))
+            produccion_data = {row['id_producto']: {'nombre': row['nombre'], 'produccion': int(row['produccion_total'])} for row in cursor.fetchall()}
+            
+            # Luego obtenemos las ventas por producto (último mes)
+            cursor.execute("""
+                SELECT 
+                    p.id_producto,
+                    p.nombre,
+                    COALESCE(SUM(v.cantidad), 0) as ventas_total
+                FROM productos p
+                LEFT JOIN ventas v ON p.id_producto = v.id_producto 
+                    AND v.fecha >= %s
+                GROUP BY p.id_producto, p.nombre
+            """, (fecha_limite,))
+            ventas_data = {row['id_producto']: {'nombre': row['nombre'], 'ventas': int(row['ventas_total'])} for row in cursor.fetchall()}
+            
+            print(f"📅 Usando datos desde: {fecha_limite}")
+            
+            # Combinamos los datos
+            comparativa_result = []
+            all_productos = set(produccion_data.keys()) | set(ventas_data.keys());
+            
+            for producto_id in all_productos:
+                nombre = produccion_data.get(producto_id, {}).get('nombre') or ventas_data.get(producto_id, {}).get('nombre')
+                produccion = produccion_data.get(producto_id, {}).get('produccion', 0)
+                ventas = ventas_data.get(producto_id, {}).get('ventas', 0)
+                
+                if produccion > 0 or ventas > 0:  # Solo incluir productos con actividad
+                    comparativa_result.append({
+                        'nombre': nombre,
+                        'produccion': produccion,
+                        'ventas': ventas
+                    })
+            
+            # Ordenar por producción y tomar los top 5
+            comparativa_result.sort(key=lambda x: x['produccion'], reverse=True)
+            comparativa_result = comparativa_result[:5]
+            
+            comparativa_labels = [row['nombre'] for row in comparativa_result]
+            comparativa_produccion = [row['produccion'] for row in comparativa_result]
+            comparativa_ventas = [row['ventas'] for row in comparativa_result]
+            
+            print(f"✅ Comparativa corregida: {len(comparativa_result)} resultados")
+            print(f"📋 Comparativa labels: {comparativa_labels}")
+            print(f"📋 Producción cantidades: {comparativa_produccion}")
+            print(f"📋 Ventas cantidades: {comparativa_ventas}")
+        except Exception as e:
+            print(f"❌ Error en comparativa: {e}")
+            comparativa_labels = []
+            comparativa_produccion = []
+            comparativa_ventas = []
+
+        # Estadísticas de ventas - CORREGIDAS CON FILTRO DE FECHA
+        try:
+            print("📈 Ejecutando estadísticas de ventas corregidas...")
+            cursor.execute("SELECT COUNT(*) AS total_transacciones FROM ventas WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")
+            total_ventas = cursor.fetchone()['total_transacciones'] or 0
+
+            cursor.execute("SELECT SUM(total) AS ingresos_totales FROM ventas WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")
+            ingresos_totales = cursor.fetchone()['ingresos_totales'] or 0
+
+            cursor.execute("SELECT AVG(total) AS promedio_por_venta FROM ventas WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")
+            promedio_venta = cursor.fetchone()['promedio_por_venta'] or 0
+            
+            # Obtener el total de unidades vendidas para el ratio (último mes)
+            cursor.execute("SELECT SUM(cantidad) AS total_unidades_vendidas FROM ventas WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")
+            total_unidades_vendidas = cursor.fetchone()['total_unidades_vendidas'] or 0
+            
+            print(f"✅ Stats (último mes) - Total transacciones: {total_ventas}")
+            print(f"✅ Stats (último mes) - Total unidades vendidas: {total_unidades_vendidas}")
+            print(f"✅ Stats (último mes) - Ingresos totales: {ingresos_totales}")
+        except Exception as e:
+            print(f"❌ Error en estadísticas de ventas: {e}")
+            total_ventas = 0
+            ingresos_totales = 0
+            promedio_venta = 0
+            total_unidades_vendidas = 0
+
+        # Ratio ventas/producción - CORREGIDO
+        if total_produccion > 0:
+            # Usar total de unidades vendidas, no suma de valores de ventas
+            ratio_ventas_produccion = round((total_unidades_vendidas / total_produccion) * 100, 1)
+        else:
+            ratio_ventas_produccion = 0
+            
+        print(f"📊 Ratio calculado: {total_unidades_vendidas} unidades vendidas / {total_produccion} unidades producidas = {ratio_ventas_produccion}%")
+
+        # Top ventas por producto - CON FILTRO DE FECHA
+        try:
+            cursor.execute("""
+                SELECT 
+                    p.nombre as producto_nombre,
+                    SUM(v.cantidad) as cantidad,
+                    SUM(v.total) as ingresos
+                FROM ventas v
+                JOIN productos p ON v.id_producto = p.id_producto
+                WHERE v.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                GROUP BY p.id_producto, p.nombre
+                ORDER BY ingresos DESC
+                LIMIT 5
+            """)
+            top_ventas = cursor.fetchall()
+            print(f"✅ Top ventas (último mes): {len(top_ventas)} resultados")
+        except Exception as e:
+            print(f"Error en top ventas: {e}")
+            top_ventas = []
+
+        # Datos para gráfico de producción por responsable
+        try:
+            cursor.execute("""
+                SELECT 
+                    CONCAT(r.nombre, ' ', r.apellido) as responsable,
+                    SUM(pr.cantidad) as total
+                FROM produccion pr
+                JOIN produccion_responsable pro_resp ON pr.id_produccion = pro_resp.id_produccion
+                JOIN responsables r ON pro_resp.id_responsable = r.id_responsable
+                GROUP BY r.id_responsable, r.nombre, r.apellido
+                ORDER BY total DESC
+                LIMIT 5
+            """)
+            responsables_data = cursor.fetchall()
+            responsables_labels = [row['responsable'] for row in responsables_data]
+            responsables_values = [row['total'] for row in responsables_data]
+        except:
+            responsables_labels = []
+            responsables_values = []
+
+        # 🎯 LOG FINAL DE DATOS ANTES DE ENVIAR AL TEMPLATE
+        print("=" * 50)
+        print("🎯 DATOS FINALES PARA EL TEMPLATE:")
+        print(f"Ventas labels: {ventas_labels}")
+        print(f"Ventas values: {ventas_values}")
+        print(f"Ventas diarias labels: {ventas_diarias_labels}")
+        print(f"Ventas diarias values: {ventas_diarias_values}")
+        print(f"Ingresos labels: {ingresos_labels}")
+        print(f"Ingresos values: {ingresos_values}")
+        print(f"Comparativa labels: {comparativa_labels}")
+        print(f"Total ventas: {total_ventas}")
+        print(f"Ingresos totales: {ingresos_totales}")
+        print("=" * 50)
 
         return render_template(
             "dashboard/index.html",
@@ -199,9 +464,23 @@ def index():
             producto_seleccionado="0",
             responsable_seleccionado="0",
             mostrar_resultados=False,
-            responsables_labels=[],         # <-- Agrega esto
-            responsables_values=[],         # <-- Y esto
-            zip=zip
+            zip=zip,
+            ventas_labels=ventas_labels,
+            ventas_values=ventas_values,
+            ingresos_labels=ingresos_labels,
+            ingresos_values=ingresos_values,
+            comparativa_labels=comparativa_labels,
+            comparativa_produccion=comparativa_produccion,
+            comparativa_ventas=comparativa_ventas,
+            total_ventas=total_ventas,
+            ingresos_totales=ingresos_totales,
+            promedio_venta=promedio_venta,
+            ratio_ventas_produccion=ratio_ventas_produccion,
+            top_ventas=top_ventas,
+            responsables_labels=responsables_labels,
+            responsables_values=responsables_values,
+            ventas_diarias_labels=ventas_diarias_labels,
+            ventas_diarias_values=ventas_diarias_values
         )
 
     except Error as err:
@@ -209,6 +488,127 @@ def index():
         return redirect(url_for('index'))
     finally:
         conn.close()
+
+@app.route('/api/comparativa-datos', methods=['POST'])
+def api_comparativa_datos():
+    """API para obtener datos de comparativa con filtros - CORREGIDA SIN MULTIPLICACIONES"""
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        producto_id = data.get('producto', '')
+        fecha_inicio = data.get('fecha_inicio', '')
+        fecha_fin = data.get('fecha_fin', '')
+        
+        print(f"🔍 API Comparativa - Filtros: producto={producto_id}, fecha_inicio={fecha_inicio}, fecha_fin={fecha_fin}")
+        
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+        
+        # CONSULTA DIRECTA DE PRODUCCIÓN SIN JOINS PROBLEMÁTICOS
+        produccion_query = "SELECT id_producto, SUM(cantidad) as total_produccion FROM produccion WHERE 1=1"
+        produccion_params = []
+        
+        if fecha_inicio:
+            produccion_query += " AND fecha >= %s"
+            produccion_params.append(fecha_inicio)
+        if fecha_fin:
+            produccion_query += " AND fecha <= %s"
+            produccion_params.append(fecha_fin)
+        if producto_id and producto_id != '0' and producto_id != '':
+            produccion_query += " AND id_producto = %s"
+            produccion_params.append(producto_id)
+            
+        produccion_query += " GROUP BY id_producto"
+        
+        print(f"📊 Consulta producción: {produccion_query}")
+        print(f"📊 Parámetros producción: {produccion_params}")
+        
+        cursor.execute(produccion_query, produccion_params)
+        produccion_raw = cursor.fetchall()
+        
+        # CONSULTA DIRECTA DE VENTAS SIN JOINS PROBLEMÁTICOS
+        ventas_query = "SELECT id_producto, SUM(cantidad) as total_ventas FROM ventas WHERE 1=1"
+        ventas_params = []
+        
+        if fecha_inicio:
+            ventas_query += " AND fecha >= %s"
+            ventas_params.append(fecha_inicio)
+        if fecha_fin:
+            ventas_query += " AND fecha <= %s"
+            ventas_params.append(fecha_fin)
+        if producto_id and producto_id != '0' and producto_id != '':
+            ventas_query += " AND id_producto = %s"
+            ventas_params.append(producto_id)
+            
+        ventas_query += " GROUP BY id_producto"
+        
+        print(f"📊 Consulta ventas: {ventas_query}")
+        print(f"📊 Parámetros ventas: {ventas_params}")
+        
+        cursor.execute(ventas_query, ventas_params)
+        ventas_raw = cursor.fetchall()
+        
+        # Crear diccionarios de datos
+        produccion_dict = {row['id_producto']: int(row['total_produccion']) for row in produccion_raw}
+        ventas_dict = {row['id_producto']: int(row['total_ventas']) for row in ventas_raw}
+        
+        print(f"📊 Producción directa: {produccion_dict}")
+        print(f"📊 Ventas directa: {ventas_dict}")
+        
+        # Obtener nombres de productos
+        productos_ids = set(produccion_dict.keys()) | set(ventas_dict.keys());
+        
+        if not productos_ids:
+            return jsonify({
+                'labels': ['Sin datos'],
+                'produccion': [0],
+                'ventas': [0]
+            })
+        
+        # Consultar nombres de productos
+        productos_query = f"SELECT id_producto, nombre FROM productos WHERE id_producto IN ({','.join(['%s'] * len(productos_ids))})"
+        cursor.execute(productos_query, list(productos_ids))
+        productos_nombres = {row['id_producto']: row['nombre'] for row in cursor.fetchall()}
+        
+        # Construir resultado final
+        comparativa_result = []
+        for producto_id_iter in productos_ids:
+            nombre = productos_nombres.get(producto_id_iter, f'Producto {producto_id_iter}')
+            produccion = produccion_dict.get(producto_id_iter, 0)
+            ventas = ventas_dict.get(producto_id_iter, 0)
+            
+            if produccion > 0 or ventas > 0:
+                comparativa_result.append({
+                    'nombre': nombre,
+                    'produccion': produccion,
+                    'ventas': ventas
+                })
+        
+        # Ordenar por producción y limitar
+        comparativa_result.sort(key=lambda x: x['produccion'], reverse=True)
+        comparativa_result = comparativa_result[:10]
+        
+        labels = [row['nombre'] for row in comparativa_result]
+        produccion_values = [row['produccion'] for row in comparativa_result]
+        ventas_values = [row['ventas'] for row in comparativa_result]
+        
+        print(f"✅ API Comparativa CORREGIDA - Resultados: {len(comparativa_result)} productos")
+        print(f"📋 Labels finales: {labels}")
+        print(f"📋 Producción final: {produccion_values}")
+        print(f"📋 Ventas final: {ventas_values}")
+        
+        conn.close()
+        return jsonify({
+            'labels': labels,
+            'produccion': produccion_values,
+            'ventas': ventas_values
+        })
+        
+    except Exception as e:
+        print(f"❌ Error en API comparativa: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/produccion')
 def produccion_index():
@@ -1086,8 +1486,11 @@ def dashboard():
         cursor.execute("SELECT COUNT(*) AS total FROM responsables")
         total_responsables = cursor.fetchone()['total'] or 0
 
-        cursor.execute("SELECT COALESCE(SUM(cantidad), 0) AS total FROM produccion")
+        # CORREGIDO: Total producción con filtro de 30 días para consistencia
+        cursor.execute("SELECT COALESCE(SUM(cantidad), 0) AS total FROM produccion WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")
         total_produccion = cursor.fetchone()['total'] or 0
+        
+        print(f"🔍 DASHBOARD INICIAL - Total producción (30 días): {total_produccion}")
 
         # Obtener lista de productos para el filtro
         cursor.execute("SELECT * FROM productos ORDER BY nombre")
@@ -1100,6 +1503,268 @@ def dashboard():
         # Obtener fecha actual y primer día del mes
         fecha_actual = datetime.now().strftime('%Y-%m-%d')
         primer_dia_mes = datetime.now().replace(day=1).strftime('%Y-%m-%d')
+
+        # CONSULTAS PARA VENTAS - SIMPLIFICADAS CON FILTROS DE FECHA
+        print("🔍 Iniciando consultas de ventas...")
+        
+        # Verificar datos duplicados
+        try:
+            cursor.execute("SELECT COUNT(*) as total_ventas FROM ventas")
+            total_registros_ventas = cursor.fetchone()['total_ventas']
+            cursor.execute("SELECT COUNT(DISTINCT id_venta) as ventas_unicas FROM ventas")
+            ventas_unicas = cursor.fetchone()['ventas_unicas']
+            print(f"📊 Total registros ventas: {total_registros_ventas}, Únicos: {ventas_unicas}")
+            
+            if total_registros_ventas != ventas_unicas:
+                print("⚠️ ADVERTENCIA: Hay posibles duplicados en la tabla ventas")
+        except Exception as e:
+            print(f"❌ Error verificando duplicados: {e}")
+        
+        # Ventas por producto - CONSULTA DIRECTA SIN JOINS COMPLEJOS
+        try:
+            print("📊 Ejecutando consulta DIRECTA de ventas por producto...")
+            cursor.execute("""
+                SELECT 
+                    p.nombre, 
+                    (SELECT COALESCE(SUM(v.cantidad), 0) 
+                     FROM ventas v 
+                     WHERE v.id_producto = p.id_producto 
+                     AND v.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)) as total_vendido
+                FROM productos p
+                HAVING total_vendido > 0
+                ORDER BY total_vendido DESC
+                LIMIT 5
+            """)
+            ventas_data = cursor.fetchall()
+            ventas_labels = [row['nombre'] for row in ventas_data]
+            ventas_values = [int(row['total_vendido']) for row in ventas_data]
+            
+            print(f"✅ Ventas por producto (consulta directa): {len(ventas_data)} resultados")
+            print(f"📋 Labels: {ventas_labels}")
+            print(f"📋 Cantidades EXACTAS: {ventas_values}")
+            
+            # Verificación adicional - mostrar registros individuales para el primer producto
+            if ventas_labels:
+                cursor.execute("""
+                    SELECT fecha, cantidad, total 
+                    FROM ventas v 
+                    JOIN productos p ON v.id_producto = p.id_producto 
+                    WHERE p.nombre = %s 
+                    AND v.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                    ORDER BY fecha DESC
+                    LIMIT 5
+                """, (ventas_labels[0],))
+                registros_ejemplo = cursor.fetchall()
+                print(f"🔍 Registros individuales para '{ventas_labels[0]}':")
+                for reg in registros_ejemplo:
+                    print(f"   📅 {reg['fecha']}: {reg['cantidad']} unidades, ${reg['total']}")
+                    
+        except Exception as e:
+            print(f"❌ Error en ventas por producto: {e}")
+            ventas_labels = []
+            ventas_values = []
+
+        # Ventas diarias (últimos 7 días) - CORREGIDA
+        try:
+            print("📅 Ejecutando consulta de ventas diarias corregida...")
+            cursor.execute("""
+                SELECT DATE(fecha) as dia, SUM(cantidad) as total_vendido_dia
+                FROM ventas
+                WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                GROUP BY DATE(fecha)
+                ORDER BY dia
+            """)
+            ventas_diarias_data = cursor.fetchall()
+            ventas_diarias_labels = [row['dia'].strftime('%d/%m') for row in ventas_diarias_data]
+            ventas_diarias_values = [int(row['total_vendido_dia']) for row in ventas_diarias_data]  # Convertir a int
+            print(f"✅ Ventas diarias: {len(ventas_diarias_data)} resultados")
+            print(f"📋 Labels diarias: {ventas_diarias_labels}")
+            print(f"📋 Cantidades diarias: {ventas_diarias_values}")
+        except Exception as e:
+            print(f"❌ Error en ventas diarias: {e}")
+            ventas_diarias_labels = []
+            ventas_diarias_values = []
+
+        # Ingresos por producto - CON FILTRO DE FECHA
+        try:
+            print("💰 Ejecutando consulta de ingresos...")
+            cursor.execute("""
+                SELECT p.nombre, SUM(v.total) as ingresos
+                FROM ventas v
+                JOIN productos p ON v.id_producto = p.id_producto
+                WHERE v.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                GROUP BY p.id_producto, p.nombre
+                ORDER BY ingresos DESC
+                LIMIT 5
+            """)
+            ingresos_data = cursor.fetchall()
+            ingresos_labels = [row['nombre'] for row in ingresos_data]
+            ingresos_values = [float(row['ingresos']) for row in ingresos_data]
+            print(f"✅ Ingresos (último mes): {len(ingresos_data)} resultados")
+            print(f"📋 Ingresos labels: {ingresos_labels}")
+        except Exception as e:
+            print(f"❌ Error en ingresos por producto: {e}")
+            ingresos_labels = []
+            ingresos_values = []
+
+        # Comparativa producción vs ventas por producto - CORREGIDA CON FECHA
+        try:
+            print("⚖️ Ejecutando consulta comparativa corregida con filtro de fecha...")
+            
+            # Obtener fecha del último mes para evitar multiplicaciones
+            cursor.execute("SELECT DATE_SUB(CURDATE(), INTERVAL 30 DAY) as fecha_limite")
+            fecha_limite = cursor.fetchone()['fecha_limite']
+            
+            # Primero obtenemos la producción por producto (último mes)
+            cursor.execute("""
+                SELECT 
+                    p.id_producto,
+                    p.nombre,
+                    COALESCE(SUM(pr.cantidad), 0) as produccion_total
+                FROM productos p
+                LEFT JOIN produccion pr ON p.id_producto = pr.id_producto 
+                    AND pr.fecha >= %s
+                GROUP BY p.id_producto, p.nombre
+            """, (fecha_limite,))
+            produccion_data = {row['id_producto']: {'nombre': row['nombre'], 'produccion': int(row['produccion_total'])} for row in cursor.fetchall()}
+            
+            # Luego obtenemos las ventas por producto (último mes)
+            cursor.execute("""
+                SELECT 
+                    p.id_producto,
+                    p.nombre,
+                    COALESCE(SUM(v.cantidad), 0) as ventas_total
+                FROM productos p
+                LEFT JOIN ventas v ON p.id_producto = v.id_producto 
+                    AND v.fecha >= %s
+                GROUP BY p.id_producto, p.nombre
+            """, (fecha_limite,))
+            ventas_data = {row['id_producto']: {'nombre': row['nombre'], 'ventas': int(row['ventas_total'])} for row in cursor.fetchall()}
+            
+            print(f"📅 Usando datos desde: {fecha_limite}")
+            
+            # Combinamos los datos
+            comparativa_result = []
+            all_productos = set(produccion_data.keys()) | set(ventas_data.keys());
+            
+            for producto_id in all_productos:
+                nombre = produccion_data.get(producto_id, {}).get('nombre') or ventas_data.get(producto_id, {}).get('nombre')
+                produccion = produccion_data.get(producto_id, {}).get('produccion', 0)
+                ventas = ventas_data.get(producto_id, {}).get('ventas', 0)
+                
+                if produccion > 0 or ventas > 0:  # Solo incluir productos con actividad
+                    comparativa_result.append({
+                        'nombre': nombre,
+                        'produccion': produccion,
+                        'ventas': ventas
+                    })
+            
+            # Ordenar por producción y tomar los top 5
+            comparativa_result.sort(key=lambda x: x['produccion'], reverse=True)
+            comparativa_result = comparativa_result[:5]
+            
+            comparativa_labels = [row['nombre'] for row in comparativa_result]
+            comparativa_produccion = [row['produccion'] for row in comparativa_result]
+            comparativa_ventas = [row['ventas'] for row in comparativa_result]
+            
+            print(f"✅ Comparativa corregida: {len(comparativa_result)} resultados")
+            print(f"📋 Comparativa labels: {comparativa_labels}")
+            print(f"📋 Producción cantidades: {comparativa_produccion}")
+            print(f"📋 Ventas cantidades: {comparativa_ventas}")
+        except Exception as e:
+            print(f"❌ Error en comparativa: {e}")
+            comparativa_labels = []
+            comparativa_produccion = []
+            comparativa_ventas = []
+
+        # Estadísticas de ventas - CORREGIDAS CON FILTRO DE FECHA
+        try:
+            print("📈 Ejecutando estadísticas de ventas corregidas...")
+            cursor.execute("SELECT COUNT(*) AS total_transacciones FROM ventas WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")
+            total_ventas = cursor.fetchone()['total_transacciones'] or 0
+
+            cursor.execute("SELECT SUM(total) AS ingresos_totales FROM ventas WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")
+            ingresos_totales = cursor.fetchone()['ingresos_totales'] or 0
+
+            cursor.execute("SELECT AVG(total) AS promedio_por_venta FROM ventas WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")
+            promedio_venta = cursor.fetchone()['promedio_por_venta'] or 0
+            
+            # Obtener el total de unidades vendidas para el ratio (último mes)
+            cursor.execute("SELECT SUM(cantidad) AS total_unidades_vendidas FROM ventas WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")
+            total_unidades_vendidas = cursor.fetchone()['total_unidades_vendidas'] or 0
+            
+            print(f"✅ Stats (último mes) - Total transacciones: {total_ventas}")
+            print(f"✅ Stats (último mes) - Total unidades vendidas: {total_unidades_vendidas}")
+            print(f"✅ Stats (último mes) - Ingresos totales: {ingresos_totales}")
+        except Exception as e:
+            print(f"❌ Error en estadísticas de ventas: {e}")
+            total_ventas = 0
+            ingresos_totales = 0
+            promedio_venta = 0
+            total_unidades_vendidas = 0
+
+        # Ratio ventas/producción - CORREGIDO
+        if total_produccion > 0:
+            # Usar total de unidades vendidas, no suma de valores de ventas
+            ratio_ventas_produccion = round((total_unidades_vendidas / total_produccion) * 100, 1)
+        else:
+            ratio_ventas_produccion = 0
+            
+        print(f"📊 Ratio calculado: {total_unidades_vendidas} unidades vendidas / {total_produccion} unidades producidas = {ratio_ventas_produccion}%")
+
+        # Top ventas por producto - CON FILTRO DE FECHA
+        try:
+            cursor.execute("""
+                SELECT 
+                    p.nombre as producto_nombre,
+                    SUM(v.cantidad) as cantidad,
+                    SUM(v.total) as ingresos
+                FROM ventas v
+                JOIN productos p ON v.id_producto = p.id_producto
+                WHERE v.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                GROUP BY p.id_producto, p.nombre
+                ORDER BY ingresos DESC
+                LIMIT 5
+            """)
+            top_ventas = cursor.fetchall()
+            print(f"✅ Top ventas (último mes): {len(top_ventas)} resultados")
+        except Exception as e:
+            print(f"Error en top ventas: {e}")
+            top_ventas = []
+
+        # Datos para gráfico de producción por responsable
+        try:
+            cursor.execute("""
+                SELECT 
+                    CONCAT(r.nombre, ' ', r.apellido) as responsable,
+                    SUM(pr.cantidad) as total
+                FROM produccion pr
+                JOIN produccion_responsable pro_resp ON pr.id_produccion = pro_resp.id_produccion
+                JOIN responsables r ON pro_resp.id_responsable = r.id_responsable
+                GROUP BY r.id_responsable, r.nombre, r.apellido
+                ORDER BY total DESC
+                LIMIT 5
+            """)
+            responsables_data = cursor.fetchall()
+            responsables_labels = [row['responsable'] for row in responsables_data]
+            responsables_values = [row['total'] for row in responsables_data]
+        except:
+            responsables_labels = []
+            responsables_values = []
+
+        # 🎯 LOG FINAL DE DATOS ANTES DE ENVIAR AL TEMPLATE
+        print("=" * 50)
+        print("🎯 DATOS FINALES PARA EL TEMPLATE:")
+        print(f"Ventas labels: {ventas_labels}")
+        print(f"Ventas values: {ventas_values}")
+        print(f"Ventas diarias labels: {ventas_diarias_labels}")
+        print(f"Ventas diarias values: {ventas_diarias_values}")
+        print(f"Ingresos labels: {ingresos_labels}")
+        print(f"Ingresos values: {ingresos_values}")
+        print(f"Comparativa labels: {comparativa_labels}")
+        print(f"Total ventas: {total_ventas}")
+        print(f"Ingresos totales: {ingresos_totales}")
+        print("=" * 50)
 
         return render_template(
             "dashboard/index.html",
@@ -1117,9 +1782,23 @@ def dashboard():
             producto_seleccionado="0",
             responsable_seleccionado="0",
             mostrar_resultados=False,
-            responsables_labels=[],         # <-- Agrega esto
-            responsables_values=[],         # <-- Y esto
-            zip=zip
+            zip=zip,
+            ventas_labels=ventas_labels,
+            ventas_values=ventas_values,
+            ingresos_labels=ingresos_labels,
+            ingresos_values=ingresos_values,
+            comparativa_labels=comparativa_labels,
+            comparativa_produccion=comparativa_produccion,
+            comparativa_ventas=comparativa_ventas,
+            total_ventas=total_ventas,
+            ingresos_totales=ingresos_totales,
+            promedio_venta=promedio_venta,
+            ratio_ventas_produccion=ratio_ventas_produccion,
+            top_ventas=top_ventas,
+            responsables_labels=responsables_labels,
+            responsables_values=responsables_values,
+            ventas_diarias_labels=ventas_diarias_labels,
+            ventas_diarias_values=ventas_diarias_values
         )
 
     except Error as err:
@@ -1144,6 +1823,7 @@ def dashboard_filtrar():
 
         # Obtener filtros desde URL (GET)
         fecha_inicio = request.args.get('fecha_inicio', primer_dia_mes)
+
         fecha_fin = request.args.get('fecha_fin', fecha_actual)
         producto_id = request.args.get('producto', '0')
         responsable_id = request.args.get('responsable', '0')
@@ -1367,6 +2047,202 @@ def dashboard_filtrar():
 
         mostrar_resultados = True
 
+        # AGREGAR CONSULTAS DE VENTAS FILTRADAS
+        # Ventas por producto filtradas
+        ventas_productos_query = """
+            SELECT p.nombre, COALESCE(SUM(v.cantidad), 0) as total
+            FROM productos p
+            LEFT JOIN ventas v ON p.id_producto = v.id_producto
+            WHERE 1=1
+        """
+        ventas_productos_params = []
+        if fecha_inicio:
+            ventas_productos_query += " AND (v.fecha >= %s OR v.fecha IS NULL)"
+            ventas_productos_params.append(fecha_inicio)
+        if fecha_fin:
+            ventas_productos_query += " AND (v.fecha <= %s OR v.fecha IS NULL)"
+            ventas_productos_params.append(fecha_fin)
+        if producto_id != '0':
+            ventas_productos_query += " AND p.id_producto = %s"
+            ventas_productos_params.append(producto_id)
+        ventas_productos_query += " GROUP BY p.id_producto, p.nombre HAVING total > 0 ORDER BY total DESC LIMIT 5"
+
+        try:
+            cursor.execute(ventas_productos_query, ventas_productos_params)
+            ventas_data = cursor.fetchall()
+            ventas_labels = [row['nombre'] for row in ventas_data]
+            ventas_values = [row['total'] for row in ventas_data]
+        except:
+            ventas_labels = []
+            ventas_values = []
+
+        # Ventas diarias filtradas
+        ventas_diarias_query = """
+            SELECT DATE(fecha) as dia, SUM(cantidad) as total
+            FROM ventas
+            WHERE 1=1
+        """
+        ventas_diarias_params = []
+        if fecha_inicio:
+            ventas_diarias_query += " AND fecha >= %s"
+            ventas_diarias_params.append(fecha_inicio)
+        if fecha_fin:
+            ventas_diarias_query += " AND fecha <= %s"
+            ventas_diarias_params.append(fecha_fin)
+        if producto_id != '0':
+            ventas_diarias_query += " AND id_producto = %s"
+            ventas_diarias_params.append(producto_id)
+        ventas_diarias_query += " GROUP BY DATE(fecha) ORDER BY dia"
+
+        try:
+            cursor.execute(ventas_diarias_query, ventas_diarias_params)
+            ventas_diarias_data = cursor.fetchall()
+            ventas_diarias_labels = [row['dia'].strftime('%d/%m') for row in ventas_diarias_data]
+            ventas_diarias_values = [row['total'] for row in ventas_diarias_data]
+        except:
+            ventas_diarias_labels = []
+            ventas_diarias_values = []
+
+        # Ingresos por producto filtrados
+        ingresos_query = """
+            SELECT p.nombre, COALESCE(SUM(v.total), 0) as ingresos
+            FROM productos p
+            LEFT JOIN ventas v ON p.id_producto = v.id_producto
+            WHERE 1=1
+        """
+        ingresos_params = []
+        if fecha_inicio:
+            ingresos_query += " AND (v.fecha >= %s OR v.fecha IS NULL)"
+            ingresos_params.append(fecha_inicio)
+        if fecha_fin:
+            ingresos_query += " AND (v.fecha <= %s OR v.fecha IS NULL)"
+            ingresos_params.append(fecha_fin)
+        if producto_id != '0':
+            ingresos_query += " AND p.id_producto = %s"
+            ingresos_params.append(producto_id)
+        ingresos_query += " GROUP BY p.id_producto, p.nombre HAVING ingresos > 0 ORDER BY ingresos DESC LIMIT 5"
+
+        try:
+            cursor.execute(ingresos_query, ingresos_params)
+            ingresos_data = cursor.fetchall()
+            ingresos_labels = [row['nombre'] for row in ingresos_data]
+            ingresos_values = [float(row['ingresos']) for row in ingresos_data]
+        except:
+            ingresos_labels = []
+            ingresos_values = []
+
+        # Comparativa producción vs ventas filtrada
+        comparativa_query = """
+            SELECT 
+                p.nombre,
+                COALESCE(SUM(pr.cantidad), 0) as produccion,
+                COALESCE(SUM(v.cantidad), 0) as ventas
+            FROM productos p
+            LEFT JOIN produccion pr ON p.id_producto = pr.id_producto
+            LEFT JOIN ventas v ON p.id_producto = v.id_producto
+            WHERE 1=1
+        """
+        comparativa_params = []
+        if fecha_inicio:
+            comparativa_query += " AND (pr.fecha >= %s OR pr.fecha IS NULL) AND (v.fecha >= %s OR v.fecha IS NULL)"
+            comparativa_params.extend([fecha_inicio, fecha_inicio])
+        if fecha_fin:
+            comparativa_query += " AND (pr.fecha <= %s OR pr.fecha IS NULL) AND (v.fecha <= %s OR v.fecha IS NULL)"
+            comparativa_params.extend([fecha_fin, fecha_fin])
+        if producto_id != '0':
+            comparativa_query += " AND p.id_producto = %s"
+            comparativa_params.append(producto_id)
+        comparativa_query += " GROUP BY p.id_producto, p.nombre ORDER BY produccion DESC LIMIT 5"
+
+        try:
+            cursor.execute(comparativa_query, comparativa_params)
+            comparativa_data = cursor.fetchall()
+            comparativa_labels = [row['nombre'] for row in comparativa_data]
+            comparativa_produccion = [row['produccion'] for row in comparativa_data]
+            comparativa_ventas = [row['ventas'] for row in comparativa_data]
+        except:
+            comparativa_labels = []
+            comparativa_produccion = []
+            comparativa_ventas = []
+
+        # Estadísticas de ventas filtradas
+        try:
+            ventas_stats_query = "SELECT COUNT(*) AS total FROM ventas WHERE 1=1"
+            ventas_stats_params = []
+            if fecha_inicio:
+                ventas_stats_query += " AND fecha >= %s"
+                ventas_stats_params.append(fecha_inicio)
+            if fecha_fin:
+                ventas_stats_query += " AND fecha <= %s"
+                ventas_stats_params.append(fecha_fin)
+            if producto_id != '0':
+                ventas_stats_query += " AND id_producto = %s"
+                ventas_stats_params.append(producto_id)
+            
+            cursor.execute(ventas_stats_query, ventas_stats_params)
+            total_ventas = cursor.fetchone()['total'] or 0
+
+            ingresos_stats_query = "SELECT COALESCE(SUM(total), 0) AS total FROM ventas WHERE 1=1"
+            if fecha_inicio:
+                ingresos_stats_query += " AND fecha >= %s"
+            if fecha_fin:
+                ingresos_stats_query += " AND fecha <= %s"
+            if producto_id != '0':
+                ingresos_stats_query += " AND id_producto = %s"
+                
+            cursor.execute(ingresos_stats_query, ventas_stats_params)
+            ingresos_totales = cursor.fetchone()['total'] or 0
+
+            promedio_stats_query = "SELECT COALESCE(AVG(total), 0) AS promedio FROM ventas WHERE 1=1"
+            if fecha_inicio:
+                promedio_stats_query += " AND fecha >= %s"
+            if fecha_fin:
+                promedio_stats_query += " AND fecha <= %s"
+            if producto_id != '0':
+                promedio_stats_query += " AND id_producto = %s"
+                
+            cursor.execute(promedio_stats_query, ventas_stats_params)
+            promedio_venta = cursor.fetchone()['promedio'] or 0
+        except:
+            total_ventas = 0
+            ingresos_totales = 0
+            promedio_venta = 0
+
+        # Ratio ventas/producción filtrado
+        if total_produccion_filtrada > 0:
+            total_ventas_cantidad = sum(ventas_values) if ventas_values else 0
+            ratio_ventas_produccion = round((total_ventas_cantidad / total_produccion_filtrada) * 100, 1)
+        else:
+            ratio_ventas_produccion = 0
+
+        # Top ventas filtradas
+        try:
+            top_ventas_query = """
+                SELECT 
+                    p.nombre as producto_nombre,
+                    SUM(v.cantidad) as cantidad,
+                    SUM(v.total) as ingresos
+                FROM ventas v
+                JOIN productos p ON v.id_producto = p.id_producto
+                WHERE 1=1
+            """
+            top_ventas_params = []
+            if fecha_inicio:
+                top_ventas_query += " AND v.fecha >= %s"
+                top_ventas_params.append(fecha_inicio)
+            if fecha_fin:
+                top_ventas_query += " AND v.fecha <= %s"
+                top_ventas_params.append(fecha_fin)
+            if producto_id != '0':
+                top_ventas_query += " AND v.id_producto = %s"
+                top_ventas_params.append(producto_id)
+            top_ventas_query += " GROUP BY p.id_producto, p.nombre ORDER BY ingresos DESC LIMIT 5"
+            
+            cursor.execute(top_ventas_query, top_ventas_params)
+            top_ventas = cursor.fetchall()
+        except:
+            top_ventas = []
+
         return render_template(
             "dashboard/index.html",
             labels=labels,
@@ -1389,9 +2265,23 @@ def dashboard_filtrar():
             pagina_actual=pagina_actual,
             total_paginas=total_paginas,
             query_string=query_string,
-            zip=zip
+            zip=zip,
+            # AGREGAR TODAS LAS VARIABLES DE VENTAS
+            ventas_labels=ventas_labels,
+            ventas_values=ventas_values,
+            ventas_diarias_labels=ventas_diarias_labels,
+            ventas_diarias_values=ventas_diarias_values,
+            ingresos_labels=ingresos_labels,
+            ingresos_values=ingresos_values,
+            comparativa_labels=comparativa_labels,
+            comparativa_produccion=comparativa_produccion,
+            comparativa_ventas=comparativa_ventas,
+            total_ventas=total_ventas,
+            ingresos_totales=ingresos_totales,
+            promedio_venta=promedio_venta,
+            ratio_ventas_produccion=ratio_ventas_produccion,
+            top_ventas=top_ventas
         )
-
     except Error as err:
         flash(f'Error al cargar el dashboard: {str(err)}', 'danger')
         return redirect(url_for('index'))
@@ -1514,6 +2404,117 @@ def dashboard_comparar():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+# Endpoint para exportar dashboard completo a PDF
+@app.route('/export/dashboard/pdf', methods=['POST'])
+def export_dashboard_pdf():
+    try:
+        from flask import jsonify
+        from reportlab.lib.pagesizes import A4, landscape
+        from reportlab.platypus import SimpleDocTemplate, PageBreak, Image
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.platypus import Paragraph, Spacer
+        import tempfile
+        import base64
+        from io import BytesIO
+        
+        data = request.get_json()
+        images = data.get('images', {})
+        filters = data.get('filters', {})
+        
+        # Crear un buffer para el PDF
+        buffer = BytesIO()
+        
+        # Crear el documento PDF en orientación horizontal
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+        story = []
+        
+        # Obtener estilos
+        styles = getSampleStyleSheet()
+        title_style = styles['Title']
+        normal_style = styles['Normal']
+        
+        # Título
+        title = Paragraph("Dashboard Completo - Chocopasión", title_style)
+        story.append(title)
+        story.append(Spacer(1, 20))
+        
+        # Información de filtros
+        if filters:
+            filters_info = "Filtros aplicados: "
+            if filters.get('fecha_inicio'):
+                filters_info += f"Desde: {filters.get('fecha_inicio')} "
+            if filters.get('fecha_fin'):
+                filters_info += f"Hasta: {filters.get('fecha_fin')} "
+            if filters.get('producto') and filters.get('producto') != '0':
+                filters_info += f"Producto ID: {filters.get('producto')} "
+            
+            filter_para = Paragraph(filters_info, normal_style)
+            story.append(filter_para)
+            story.append(Spacer(1, 20))
+        
+        # Función para agregar imagen al PDF
+        def add_image_to_story(img_data, title_text):
+            if img_data:
+                try:
+                    # Decodificar imagen base64
+                    img_data = img_data.split(',')[1] if ',' in img_data else img_data
+                    img_bytes = base64.b64decode(img_data)
+                    
+                    # Crear imagen temporal
+                    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
+                        tmp_file.write(img_bytes)
+                        tmp_file.flush()
+                        
+                        # Agregar título de la sección
+                        section_title = Paragraph(title_text, styles['Heading2'])
+                        story.append(section_title)
+                        story.append(Spacer(1, 10))
+                        
+                        # Agregar imagen al story
+                        img = Image(tmp_file.name, width=500, height=250)
+                        story.append(img)
+                        story.append(Spacer(1, 20))
+                        
+                    # Limpiar archivo temporal
+                    os.unlink(tmp_file.name)
+                    
+                except Exception as e:
+                    print(f"Error procesando imagen {title_text}: {e}")
+        
+        # Agregar cada gráfico
+        add_image_to_story(images.get('productsImg'), "Producción por Producto")
+        add_image_to_story(images.get('dailyImg'), "Producción Diaria")
+        add_image_to_story(images.get('respImg'), "Producción por Responsable")
+        
+        # Nueva página para gráficos de ventas
+        story.append(PageBreak())
+        
+        add_image_to_story(images.get('ventasProductoImg'), "Ventas por Producto")
+        add_image_to_story(images.get('ventasDiariasImg'), "Ventas Diarias")
+        add_image_to_story(images.get('ingresosImg'), "Ingresos por Producto")
+        add_image_to_story(images.get('comparativaImg'), "Comparativa: Ventas vs Producción")
+        
+        # Construir el PDF
+        doc.build(story)
+        
+
+        
+        # Obtener el contenido del buffer
+        buffer.seek(0)
+        pdf_data = buffer.getvalue()
+        buffer.close()
+        
+        # Crear respuesta
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = 'attachment; filename=dashboard_completo.pdf'
+        
+        return response
+        
+    except Exception as e:
+        print(f"Error al generar PDF: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

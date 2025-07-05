@@ -33,7 +33,7 @@ conn = mysql.connector.connect(
     port=3306,
     user="root",
     password="",
-    database="chocopasion1"
+    database="chocopasion2"
 )
 cursor = conn.cursor(dictionary=True)
 
