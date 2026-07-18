@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     apellido VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     id_rol INT,
-    contraseña VARCHAR(255) NOT NULL,
+    contrasena VARCHAR(255) NOT NULL,
     FOREIGN KEY (id_rol) REFERENCES roles(id_rol)
 );
 
@@ -128,7 +128,7 @@ INSERT IGNORE INTO responsables (nombre, apellido, email) VALUES
 ('MARIELA', 'SILVA', 'mariela.silva@chocopasion.com'),
 ('YONALA', 'GONZALES', 'yonala.castro@chocopasion.com');
 
-INSERT IGNORE INTO usuarios (nombre, apellido, email, id_rol, contraseña) VALUES
+INSERT IGNORE INTO usuarios (nombre, apellido, email, id_rol, contrasena) VALUES
 ('Empleado', 'Stefan', 'empleado@gmail.com', 1, '123456789'),
 ('Administrador', 'Helena', 'admin@gmail.com', 2, '987654321');
 

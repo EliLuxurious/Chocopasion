@@ -19,4 +19,4 @@ class UsuarioRepository:
             session.commit()
 
     def verificar_login(self, email, password):
-        return session.query(Usuario).filter_by(email=email, contraseña=password).first()
+        return session.query(Usuario).filter_by(email=email, contrasena=password).first()

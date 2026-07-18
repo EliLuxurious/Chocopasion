@@ -46,7 +46,7 @@ CREATE TABLE usuarios (
     apellido VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     id_rol INT,
-    contraseña VARCHAR(255) NOT NULL,
+    contrasena VARCHAR(255) NOT NULL,
     FOREIGN KEY (id_rol) REFERENCES roles(id_rol)
 );
 
@@ -129,7 +129,7 @@ INSERT INTO responsables (nombre, apellido, email) VALUES
 ('YONALA', 'GONZALES', 'yonala.castro@chocopasion.com');
 
 -- Insertar usuarios (⚠ Recomendación: en producción, usa contraseñas encriptadas)
-INSERT INTO usuarios (nombre, apellido, email, id_rol, contraseña) VALUES
+INSERT INTO usuarios (nombre, apellido, email, id_rol, contrasena) VALUES
 ('Empleado', 'Stefan', 'empleado@gmail.com', 1, '123456789'),
 ('Administrador', 'Helena', 'admin@gmail.com', 2, '987654321');
 

@@ -103,7 +103,7 @@ def login():
             SELECT u.id_usuario, u.nombre, u.email, r.nombre_rol as rol 
             FROM usuarios u
             JOIN roles r ON u.id_rol = r.id_rol
-            WHERE u.email = %s AND u.contraseña = %s
+            WHERE u.email = %s AND u.contrasena = %s
         """, (email, password))
         
         usuario = cursor.fetchone()
