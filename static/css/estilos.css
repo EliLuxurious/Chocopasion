@@ -1,232 +1,222 @@
-/* Variables de colores */
+/* ==========================================================================
+   Chocopasión Luxury Design System — Cream, Bronze & Gold
+   Created by Expert Graphic Designer Architecture
+   ========================================================================== */
+
+/* Design Tokens & Theme Colors */
 :root {
-    --primary-color: #4361ee;
-    --secondary-color: #3f37c9;
-    --accent-color: #4cc9f0;
-    --light-color: #f8f9fa;
-    --dark-color: #212529;
-    --success-color: #4ade80;
-    --danger-color: #f87171;
-    --gray-color: #6c757d;
+    --color-cream-50: #FAF8F5;
+    --color-cream-100: #F5EBE0;
+    --color-cream-200: #EAD5C3;
+    --color-bronze-500: #A3704C;
+    --color-bronze-600: #8E5A3C;
+    --color-bronze-700: #6E432A;
+    --color-bronze-800: #4E2F1C;
+    --color-gold-300: #E6C587;
+    --color-gold-400: #D4A843;
+    --color-gold-500: #B8901E;
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* Estilo general */
+/* 1. Base Setup with Ambient Mesh Gradient */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f0f2f5;
-    margin: 0;
-    padding: 0;
-    color: var(--dark-color);
+    font-family: var(--font-sans);
+    background-color: var(--color-cream-50);
+    color: var(--color-bronze-800);
+    position: relative;
+    min-height: 100vh;
+    overflow-x: hidden;
 }
 
-h1 {
-    font-size: 2rem;
-    font-weight: 600;
-    color: var(--primary-color);
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-/* Sidebar */
-.sidebar {
-    background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
-    color: white;
-    height: 100vh;
+/* Ambient animated mesh blobs (Invisible to keyboard input, provides visual depth) */
+body::before {
+    content: '';
     position: fixed;
-    padding-top: 20px;
-    width: 240px;
+    top: -15%;
+    left: -15%;
+    width: 60vw;
+    height: 60vw;
+    background: radial-gradient(circle, rgba(212, 168, 67, 0.12) 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    z-index: -10;
+    pointer-events: none;
+    animation: floatBlob 25s infinite alternate ease-in-out;
 }
 
-.sidebar .logo {
-    text-align: center;
-    margin-bottom: 30px;
-    padding: 0 15px;
+body::after {
+    content: '';
+    position: fixed;
+    bottom: -15%;
+    right: -15%;
+    width: 50vw;
+    height: 50vw;
+    background: radial-gradient(circle, rgba(142, 90, 60, 0.08) 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    z-index: -10;
+    pointer-events: none;
+    animation: floatBlob 30s infinite alternate-reverse ease-in-out;
 }
 
-.sidebar .logo img {
-    width: 50px;
-    height: 50px;
+@keyframes floatBlob {
+    0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    50% { transform: translate(8%, -8%) scale(1.1) rotate(90deg); }
+    100% { transform: translate(-5%, 5%) scale(0.9) rotate(180deg); }
 }
 
-.sidebar .logo h3 {
-    margin-top: 10px;
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--color-cream-50);
+}
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--color-bronze-500), var(--color-bronze-600));
+    border-radius: 99px;
+    border: 2px solid var(--color-cream-50);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-bronze-800);
+}
+
+/* 2. Glassmorphism and Card Architectures */
+.glass-container {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 12px 40px -10px rgba(78, 47, 28, 0.06);
+}
+
+.premium-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(245, 235, 224, 0.7);
+    box-shadow: 0 8px 30px rgba(78, 47, 28, 0.03);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.premium-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(212, 168, 67, 0.35);
+    box-shadow: 0 16px 40px rgba(142, 90, 60, 0.08);
+}
+
+/* Microscopic border glow */
+.micro-border {
+    position: relative;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, rgba(212, 168, 67, 0.3) 50%, rgba(255, 255, 255, 0.45) 100%);
+    box-shadow: 0 16px 45px -10px rgba(78, 47, 28, 0.08);
+}
+
+/* 3. Inputs & Forms with Soft Focus Glow */
+.premium-input {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(142, 90, 60, 0.2);
+    border-radius: 0.75rem;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    color: var(--color-bronze-800);
+}
+
+.premium-input:focus {
+    background-color: #ffffff;
+    border-color: var(--color-gold-400);
+    box-shadow: 0 0 0 4px rgba(212, 168, 67, 0.15);
+    transform: translateY(-1px);
+    outline: none;
+}
+
+/* 4. Interactive Tactile Buttons with Shimmer Sweeps */
+.premium-btn {
+    background: linear-gradient(135deg, var(--color-bronze-600) 0%, var(--color-bronze-700) 100%);
+    color: #ffffff;
+    border-radius: 0.75rem;
     font-weight: 600;
-}
-
-.sidebar .nav-link {
-    color: rgba(255, 255, 255, 0.8);
-    padding: 12px 20px;
-    margin: 5px 15px;
-    border-radius: 8px;
-    display: flex;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 14px rgba(142, 90, 60, 0.18);
+    display: inline-flex;
     align-items: center;
-    transition: all 0.3s;
-}
-
-.sidebar .nav-link:hover, .sidebar .nav-link.active {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-}
-
-.sidebar .nav-link i {
-    margin-right: 10px;
-    width: 20px;
-    text-align: center;
-}
-
-/* Contenido principal */
-.main-content {
-    margin-left: 240px;
-    padding: 30px;
-}
-
-.card {
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    margin-bottom: 25px;
+    justify-content: center;
+    gap: 0.5rem;
+    position: relative;
     overflow: hidden;
 }
 
-.card-header {
-    background-color: white;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    padding: 15px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+.premium-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: skewX(-25deg);
+    pointer-events: none;
 }
 
-.card-header h5 {
-    margin: 0;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
+.premium-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(142, 90, 60, 0.28);
+    background: linear-gradient(135deg, var(--color-bronze-500) 0%, var(--color-bronze-600) 100%);
 }
 
-.card-header h5 i {
-    margin-right: 10px;
-    background-color: var(--primary-color);
-    color: white;
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.premium-btn:hover::before {
+    animation: shimmerSweep 0.85s ease-out forwards;
 }
 
-.card-body {
-    padding: 20px;
+.premium-btn:active {
+    transform: translateY(0);
 }
 
-/* Formulario */
-form {
-    max-width: 500px;
-    margin: 0 auto;
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+@keyframes shimmerSweep {
+    0% { left: -150%; }
+    100% { left: 150%; }
 }
 
-form label {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: var(--dark-color);
+/* Gold Accent Button */
+.premium-btn-gold {
+    background: linear-gradient(135deg, var(--color-gold-400) 0%, var(--color-gold-500) 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(212, 168, 67, 0.25);
 }
 
-form input[type="text"] {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1rem;
-    color: var(--dark-color);
-    background-color: var(--light-color);
-    transition: border-color 0.3s;
+.premium-btn-gold:hover {
+    background: linear-gradient(135deg, #e3b652 0%, var(--color-gold-400) 100%);
+    box-shadow: 0 8px 20px rgba(212, 168, 67, 0.38);
 }
 
-form input[type="text"]:focus {
-    border-color: var(--primary-color);
-    outline: none;
-    box-shadow: 0 0 5px rgba(67, 97, 238, 0.3);
+/* 5. Navigation Sidebar overrides (Light Cream Glass Panel) */
+.glass-sidebar {
+    background: rgba(250, 248, 245, 0.75) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(142, 90, 60, 0.08);
 }
 
-form button {
-    width: 100%;
-    padding: 10px 15px;
-    font-size: 1rem;
-    font-weight: 600;
-    color: white;
-    background-color: var(--primary-color);
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
+/* 6. List and Table Row Interactivity */
+.premium-table-row {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-form button:hover {
-    background-color: var(--secondary-color);
-    transform: scale(1.02);
+.premium-table-row:hover {
+    background-color: rgba(245, 235, 224, 0.4) !important;
+    transform: translateX(3px);
 }
 
-form button:active {
-    transform: scale(0.98);
+/* 7. Subtle Glow animations */
+@keyframes goldPulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(212, 168, 67, 0.1); }
+    50% { box-shadow: 0 4px 30px rgba(212, 168, 67, 0.25); }
 }
 
-/* Enlace */
-a {
-    display: inline-block;
-    margin-top: 15px;
-    text-align: center;
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 600;
-    transition: color 0.3s;
-}
-
-a:hover {
-    color: var(--secondary-color);
-}
-
-/* Responsividad */
-@media (max-width: 992px) {
-    .sidebar {
-        width: 70px;
-        overflow: hidden;
-    }
-
-    .sidebar .logo h3, .sidebar .nav-link span {
-        display: none;
-    }
-
-    .sidebar .nav-link {
-        justify-content: center;
-        padding: 12px;
-    }
-
-    .sidebar .nav-link i {
-        margin-right: 0;
-    }
-
-    .main-content {
-        margin-left: 70px;
-    }
-}
-
-@media (max-width: 768px) {
-    form {
-        padding: 15px;
-    }
-
-    h1 {
-        font-size: 1.8rem;
-    }
-
-    form button {
-        font-size: 0.9rem;
-    }
+.glow-active {
+    animation: goldPulse 3s infinite ease-in-out;
 }

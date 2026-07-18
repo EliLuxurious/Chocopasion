@@ -1,91 +1,194 @@
-<!-- filepath: c:\SI\Chocopasion\templates\produccion\index.html -->
 {% extends "base.html" %}
-
-{% block title %}Producción - Chocopasión{% endblock %}
+{% block title %}Producción — Chocopasión{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-2">Producción</h1>
-                    <p class="text-muted">Gestiona los registros de producción diaria</p>
-                </div>
-                <a href="{{ url_for('produccion_agregar') }}" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Nuevo Registro
-                </a>
-            </div>
-        </div>
+<!-- Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Producción</h1>
+        <p class="text-gray-500 mt-0.5">Registros de producción diaria de chocolates</p>
     </div>
-
-    <div class="card border-0 shadow-sm">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>ID</th>
-                            <th>Fecha</th>
-                            <th>Producto</th>
-                            <th>Presentación</th>
-                            <th>Cantidad</th>
-                            <th>Responsable</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for produccion in producciones %}
-                        <tr>
-                            <td>{{ produccion.id_produccion }}</td>
-                            <td>{{ produccion.fecha.strftime('%d/%m/%Y') }}</td>
-                            <td>{{ produccion.producto }}</td>
-                            <td>{{ produccion.presentacion }}</td>
-                            <td>{{ produccion.cantidad }}</td>
-                            <td>{{ produccion.responsable_nombre }}</td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{{ url_for('produccion_editar', id=produccion.id_produccion) }}" 
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="{{ url_for('produccion_ver', id=produccion.id_produccion) }}" 
-                                       class="btn btn-sm btn-outline-info">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <button type="button" 
-                                            class="btn btn-sm btn-outline-danger"
-                                            onclick="confirmarEliminacion({{ produccion.id_produccion }})">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    <a href="{{ url_for('produccion_agregar') }}"
+       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold
+              bg-chocolate-700 hover:bg-chocolate-800 text-white shadow-lg shadow-chocolate-900/20
+              transition-all duration-200 active:scale-95">
+        <i class="fas fa-plus"></i> Nuevo Registro
+    </a>
 </div>
 
-<!-- Modal de Confirmación de Eliminación -->
-<div class="modal fade" id="confirmarEliminacionModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirmar Eliminación</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- Tabla -->
+<div class="bg-white rounded-2xl border border-chocolate-100 shadow-card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-chocolate-50 border-b border-chocolate-100">
+                    <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">ID</th>
+                    <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Fecha</th>
+                    <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Producto</th>
+                    <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Presentación</th>
+                    <th class="text-right px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Cantidad</th>
+                    <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Responsable</th>
+                    <th class="text-center px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for produccion in producciones %}
+                <tr class="table-row group">
+                    <td class="px-6 py-4 text-gray-400 font-mono text-xs">#{{ produccion.id_produccion }}</td>
+                    <td class="px-6 py-4 text-gray-600">{{ produccion.fecha.strftime('%d/%m/%Y') }}</td>
+                    <td class="px-6 py-4 font-medium text-gray-800">{{ produccion.producto }}</td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                            {{ produccion.presentacion }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <span class="font-bold text-chocolate-700">{{ produccion.cantidad }}</span>
+                    </td>
+                    <td class="px-6 py-4 text-gray-600">{{ produccion.responsable_nombre }}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <a href="{{ url_for('produccion_editar', id=produccion.id_produccion) }}"
+                               title="Editar"
+                               class="w-8 h-8 flex items-center justify-center rounded-lg text-blue-600
+                                      hover:bg-blue-50 transition-colors duration-200">
+                                <i class="fas fa-edit text-xs"></i>
+                            </a>
+                            <a href="{{ url_for('produccion_ver', id=produccion.id_produccion) }}"
+                               title="Ver"
+                               class="w-8 h-8 flex items-center justify-center rounded-lg text-emerald-600
+                                      hover:bg-emerald-50 transition-colors duration-200">
+                                <i class="fas fa-eye text-xs"></i>
+                            </a>
+                            <button type="button"
+                                    title="Eliminar"
+                                    onclick="confirmarEliminacion({{ produccion.id_produccion }})"
+                                    class="w-8 h-8 flex items-center justify-center rounded-lg text-red-500
+                                           hover:bg-red-50 transition-colors duration-200">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="px-6 py-16 text-center">
+                        <i class="fas fa-industry text-gray-200 text-5xl mb-4 block"></i>
+                        <p class="text-gray-400 font-medium">No hay registros de producción</p>
+                        <a href="{{ url_for('produccion_agregar') }}"
+                           class="inline-flex items-center gap-2 mt-4 px-4 py-2 text-sm font-semibold
+                                  text-chocolate-700 hover:text-chocolate-900 transition-colors">
+                            <i class="fas fa-plus text-xs"></i> Agregar el primero
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if total_pages > 1 %}
+    <div class="flex items-center justify-between border-t border-chocolate-100 bg-chocolate-50/50 px-6 py-4">
+        <div class="flex flex-1 justify-between sm:hidden">
+            {% if page > 1 %}
+            <a href="{{ url_for('produccion_index', page=page-1) }}" class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold border border-chocolate-200 text-chocolate-700 bg-white hover:bg-chocolate-50 transition-colors">
+                <i class="fas fa-chevron-left text-xs"></i> Anterior
+            </a>
+            {% else %}
+            <span class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold border border-chocolate-100 text-gray-400 bg-gray-50 cursor-not-allowed">
+                <i class="fas fa-chevron-left text-xs"></i> Anterior
+            </span>
+            {% endif %}
+
+            {% if page < total_pages %}
+            <a href="{{ url_for('produccion_index', page=page+1) }}" class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold border border-chocolate-200 text-chocolate-700 bg-white hover:bg-chocolate-50 transition-colors">
+                Siguiente <i class="fas fa-chevron-right text-xs"></i>
+            </a>
+            {% else %}
+            <span class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold border border-chocolate-100 text-gray-400 bg-gray-50 cursor-not-allowed">
+                Siguiente <i class="fas fa-chevron-right text-xs"></i>
+            </span>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-chocolate-800">
+                    Página <span class="font-bold">{{ page }}</span> de <span class="font-bold">{{ total_pages }}</span>
+                </p>
             </div>
-            <div class="modal-body">
-                ¿Está seguro de que desea eliminar este registro de producción?
+            <div>
+                <nav class="isolate inline-flex -space-x-px rounded-xl shadow-sm bg-white border border-chocolate-100 overflow-hidden" aria-label="Pagination">
+                    <!-- Anterior -->
+                    {% if page > 1 %}
+                    <a href="{{ url_for('produccion_index', page=page-1) }}" class="relative inline-flex items-center px-3 py-2 text-chocolate-700 hover:bg-chocolate-50 transition-colors border-r border-chocolate-100">
+                        <span class="sr-only">Anterior</span>
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </a>
+                    {% else %}
+                    <span class="relative inline-flex items-center px-3 py-2 text-gray-300 bg-gray-50/50 cursor-not-allowed border-r border-chocolate-100">
+                        <span class="sr-only">Anterior</span>
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </span>
+                    {% endif %}
+
+                    <!-- Page Numbers -->
+                    {% for p in pages_range %}
+                        {% if p == '...' %}
+                        <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-400 bg-gray-50 border-r border-chocolate-100 last:border-r-0">
+                            ...
+                        </span>
+                        {% elif p == page %}
+                        <span aria-current="page" class="relative z-10 inline-flex items-center bg-chocolate-700 px-4 py-2 text-sm font-semibold text-white focus:z-20">
+                            {{ p }}
+                        </span>
+                        {% else %}
+                        <a href="{{ url_for('produccion_index', page=p) }}" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-chocolate-700 hover:bg-chocolate-50 transition-colors border-r border-chocolate-100 last:border-r-0">
+                            {{ p }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Siguiente -->
+                    {% if page < total_pages %}
+                    <a href="{{ url_for('produccion_index', page=page+1) }}" class="relative inline-flex items-center px-3 py-2 text-chocolate-700 hover:bg-chocolate-50 transition-colors border-l border-chocolate-100">
+                        <span class="sr-only">Siguiente</span>
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </a>
+                    {% else %}
+                    <span class="relative inline-flex items-center px-3 py-2 text-gray-300 bg-gray-50/50 cursor-not-allowed border-l border-chocolate-100">
+                        <span class="sr-only">Siguiente</span>
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </span>
+                    {% endif %}
+                </nav>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <a href="#" id="confirmarEliminacionBtn" class="btn btn-danger">
-                    <i class="fas fa-trash me-2"></i>Eliminar
-                </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Eliminar -->
+<div id="modalEliminar" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="cerrarModal()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-slide-in">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <i class="fas fa-trash text-red-500"></i>
             </div>
+            <h3 class="font-bold text-gray-900">Confirmar Eliminación</h3>
+        </div>
+        <p class="text-gray-500 text-sm mb-6">¿Está seguro de eliminar este registro de producción? Esta acción no se puede deshacer.</p>
+        <div class="flex gap-3">
+            <button onclick="cerrarModal()"
+                    class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold
+                           text-gray-600 hover:bg-gray-50 transition-colors">
+                Cancelar
+            </button>
+            <a id="btnConfirmarEliminar" href="#"
+               class="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold
+                      text-center transition-colors">
+                <i class="fas fa-trash me-1"></i> Eliminar
+            </a>
         </div>
     </div>
 </div>
@@ -93,10 +196,16 @@
 
 {% block extra_js %}
 <script>
-function confirmarEliminacion(id) {
-    const modal = new bootstrap.Modal(document.getElementById('confirmarEliminacionModal'));
-    document.getElementById('confirmarEliminacionBtn').href = `/produccion/eliminar/${id}`;
-    modal.show();
-}
+    function confirmarEliminacion(id) {
+        document.getElementById('btnConfirmarEliminar').href = `/produccion/eliminar/${id}`;
+        const modal = document.getElementById('modalEliminar');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+    function cerrarModal() {
+        const modal = document.getElementById('modalEliminar');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 </script>
 {% endblock %}

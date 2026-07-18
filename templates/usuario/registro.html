@@ -1,24 +1,189 @@
-<h1>Registrar Usuario</h1>
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Registrar cuenta en Chocopasión — Sistema de gestión de producción y ventas">
+    <title>Registrar Cuenta — Chocopasión</title>
 
+    <!-- Tailwind CSS Play CDN con configuración de diseñador experto -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: {
+                            50:  '#FAF8F5',
+                            100: '#F5EBE0',
+                            200: '#EAD5C3',
+                        },
+                        bronze: {
+                            500: '#A3704C',
+                            600: '#8E5A3C',
+                            700: '#6E432A',
+                            800: '#4E2F1C',
+                        },
+                        gold: {
+                            300: '#E6C587',
+                            400: '#D4A843',
+                            500: '#B8901E',
+                        }
+                    },
+                    fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+                    keyframes: {
+                        'float-in': {
+                            '0%': { opacity: '0', transform: 'translateY(24px) scale(0.98)' },
+                            '100%': { opacity: '1', transform: 'translateY(0) scale(1)' }
+                        }
+                    },
+                    animation: { 'float-in': 'float-in 0.65s cubic-bezier(0.16, 1, 0.3, 1)' }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Cargamos estilos globales -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+<body class="h-full font-sans antialiased overflow-hidden bg-cream-50">
 
-<meta charset="UTF-8">
-<title>Login</title>
-<!-- Bootstrap desde CDN -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Contenedor Principal Centrado -->
+    <div class="min-h-screen flex items-center justify-center relative px-4">
 
-<!-- Tus estilos personalizados -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+        <!-- Elementos de Iluminación Ambiental (Orbes Flotantes) -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute top-[15%] left-[10%] w-[380px] h-[380px] rounded-full bg-gold-400/10 blur-[110px] animate-pulse" style="animation-duration: 9s;"></div>
+            <div class="absolute bottom-[15%] right-[10%] w-[420px] h-[420px] rounded-full bg-bronze-500/8 blur-[130px] animate-pulse" style="animation-duration: 14s;"></div>
+        </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% for category, message in messages %}
-    <p style="color:{{ 'red' if category == 'error' else 'green' }}">{{ message }}</p>
-  {% endfor %}
-{% endwith %}
+        <!-- Card de registro con Micro-Border de shimer y Glassmorfismo de alta costura -->
+        <div class="relative z-10 w-full max-w-md animate-float-in micro-border rounded-[2.05rem]">
+            <div class="backdrop-blur-2xl bg-white/80 rounded-[2rem] overflow-hidden">
 
-<form method="POST">
-    Usuario: <input type="text" name="username"><br>
-    Contraseña: <input type="password" name="password"><br>
-    <button type="submit">Registrar</button>
-</form>
+                <!-- Encabezado de la Card - Elegante y Minimalista -->
+                <div class="px-8 pt-10 pb-6 text-center border-b border-cream-100/60 bg-white/40">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl
+                                bg-gradient-to-br from-cream-100 to-cream-200 text-3xl mb-4 shadow-sm border border-white">
+                        🍫
+                    </div>
+                    <h1 class="text-bronze-800 text-3xl font-extrabold tracking-tight">Crear Cuenta</h1>
+                    <p class="text-bronze-600 text-xs mt-1 font-semibold uppercase tracking-wider">Regístrate en Chocopasión</p>
+                </div>
 
-<a href="{{ url_for('usuario_bp.login') }}">¿Ya tienes cuenta? Inicia sesión</a>
+                <!-- Formulario -->
+                <div class="px-8 py-8">
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            <div class="mb-6 space-y-2">
+                            {% for category, message in messages %}
+                                <div class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm
+                                            {{ 'bg-red-50 border border-red-200/60 text-red-700' if category == 'error' else 'bg-emerald-50 border border-emerald-200/60 text-emerald-700' }}">
+                                    <i class="fas {{ 'fa-exclamation-circle' if category == 'error' else 'fa-check-circle' }} shrink-0"></i>
+                                    <span class="font-medium">{{ message }}</span>
+                                </div>
+                            {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" class="space-y-6" id="register-form">
+
+                        <!-- Nombre de usuario -->
+                        <div>
+                            <label for="username" class="block text-xs font-bold text-bronze-700 uppercase tracking-wider mb-2">
+                                Nombre de usuario
+                            </label>
+                            <div class="relative flex items-center text-bronze-500/60 focus-within:text-gold-500 transition-colors duration-200">
+                                <div class="absolute left-4 pointer-events-none">
+                                    <i class="fas fa-user text-sm transition-colors duration-200"></i>
+                                </div>
+                                <input type="text" id="username" name="username" required
+                                       placeholder="ejemplo_usuario"
+                                       class="w-full pl-11 pr-4 py-3.5 bg-white/80 border border-cream-200/80 rounded-2xl text-bronze-800
+                                              text-sm placeholder-bronze-500/40
+                                              focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent
+                                              transition-all duration-300 premium-input">
+                            </div>
+                        </div>
+
+                        <!-- Contraseña -->
+                        <div>
+                            <label for="password" class="block text-xs font-bold text-bronze-700 uppercase tracking-wider mb-2">
+                                Contraseña
+                            </label>
+                            <div class="relative flex items-center text-bronze-500/60 focus-within:text-gold-500 transition-colors duration-200">
+                                <div class="absolute left-4 pointer-events-none">
+                                    <i class="fas fa-lock text-sm transition-colors duration-200"></i>
+                                </div>
+                                <input type="password" id="password" name="password" required
+                                       placeholder="••••••••"
+                                       class="w-full pl-11 pr-11 py-3.5 bg-white/80 border border-cream-200/80 rounded-2xl text-bronze-800
+                                              text-sm placeholder-bronze-500/40
+                                              focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent
+                                              transition-all duration-300 premium-input">
+                                <button type="button" id="toggle-pwd"
+                                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-bronze-500/60 hover:text-bronze-700 transition-colors">
+                                    <i class="fas fa-eye text-sm" id="pwd-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Botón Submit -->
+                        <button type="submit" id="submit-btn"
+                                class="w-full py-4 px-6 rounded-2xl font-bold text-white text-sm
+                                       bg-gradient-to-r from-bronze-700 to-bronze-600
+                                       hover:from-bronze-600 hover:to-bronze-500
+                                       focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2
+                                       active:scale-[0.98] transition-all duration-300 shadow-lg shadow-bronze-800/15
+                                       flex items-center justify-center gap-2 mt-4 premium-btn">
+                            <i class="fas fa-user-plus text-xs"></i>
+                            <span>Registrar</span>
+                        </button>
+
+                    </form>
+                </div>
+
+                <!-- Footer de la Card -->
+                <div class="px-8 pb-6 text-center border-t border-cream-100/40 pt-4 bg-white/20 flex flex-col gap-2">
+                    <a href="/login" class="text-xs text-bronze-600 hover:text-gold-500 font-semibold transition-colors font-semibold">
+                        ¿Ya tienes cuenta? Inicia sesión
+                    </a>
+                    <p class="text-[10px] text-bronze-700/50 font-medium mt-1">
+                        © 2024 Chocopasión · Sistema de Gestión Interno
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle visibilidad de contraseña
+        document.getElementById('toggle-pwd')?.addEventListener('click', function () {
+            const pwd = document.getElementById('password');
+            const icon = document.getElementById('pwd-icon');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                pwd.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        });
+
+        // Estado de carga al enviar
+        document.getElementById('register-form')?.addEventListener('submit', function () {
+            const btn = document.getElementById('submit-btn');
+            const span = btn.querySelector('span');
+            const icon = btn.querySelector('i');
+            if (icon) icon.className = 'fas fa-spinner fa-spin text-xs';
+            if (span) span.textContent = 'Registrando...';
+            btn.disabled = true;
+        });
+    </script>
+</body>
+</html>

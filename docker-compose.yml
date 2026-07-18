@@ -1,0 +1,63 @@
+services:
+  # ── Base de datos MySQL ─────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: chocopasion_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-chocopasion2}
+      MYSQL_USER: ${MYSQL_USER:-chocouser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-chocopassword}
+    ports:
+      - "3307:3306"          # Puerto externo 3307 para no colisionar con MySQL local
+    volumes:
+      - mysql_data:/var/lib/mysql               # Datos persistentes
+      - ./init-db:/docker-entrypoint-initdb.d   # Scripts de inicialización SQL
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_secret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - chocopasion_net
+
+  # ── Aplicación Flask ─────────────────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chocopasion_web
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      FLASK_ENV: ${FLASK_ENV:-development}
+      FLASK_DEBUG: ${FLASK_DEBUG:-1}
+      MYSQL_HOST: db                            # Nombre del servicio en la red Docker
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_USER:-chocouser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-chocopassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-chocopasion2}
+      SECRET_KEY: ${SECRET_KEY:-chocopasion_dev_secret_2024}
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app                                  # Hot-reload en desarrollo
+      - /app/__pycache__                         # Excluir caché de Python
+    depends_on:
+      db:
+        condition: service_healthy              # Espera que MySQL esté listo
+    networks:
+      - chocopasion_net
+
+# ── Volúmenes ────────────────────────────────────────────────────────────────────
+volumes:
+  mysql_data:
+    driver: local
+
+# ── Redes ────────────────────────────────────────────────────────────────────────
+networks:
+  chocopasion_net:
+    driver: bridge

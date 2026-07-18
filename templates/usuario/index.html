@@ -1,72 +1,86 @@
 {% extends "base.html" %}
+{% block title %}Gestión de Usuarios — Chocopasión{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Gestión de Usuarios</h2>
-        <a href="{{ url_for('usuarios_agregar') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Nuevo Usuario
-        </a>
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Gestión de Usuarios</h1>
+        <p class="text-gray-500 mt-0.5">Administra los usuarios del sistema</p>
     </div>
+    <a href="{{ url_for('usuarios_agregar') }}"
+       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold
+              bg-chocolate-700 hover:bg-chocolate-800 text-white shadow-lg shadow-chocolate-900/20
+              transition-all duration-200 active:scale-95">
+        <i class="fas fa-plus"></i> Nuevo Usuario
+    </a>
+</div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Apellido</th>
-                            <th>Email</th>
-                            <th>Rol</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for usuario in usuarios %}
-                        <tr>
-                            <td>{{ usuario.id_usuario }}</td>
-                            <td>{{ usuario.nombre }}</td>
-                            <td>{{ usuario.apellido }}</td>
-                            <td>{{ usuario.email }}</td>
-                            <td>
-                                <span class="badge {% if usuario.rol == 'administrador' %}bg-danger{% else %}bg-info{% endif %}">
-                                    {{ usuario.rol }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{{ url_for('usuarios_editar', id=usuario.id_usuario) }}" 
-                                       class="btn btn-sm btn-warning" 
-                                       title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="{{ url_for('usuarios_eliminar', id=usuario.id_usuario) }}" 
-                                       class="btn btn-sm btn-danger" 
-                                       title="Eliminar"
-                                       onclick="return confirm('¿Está seguro de eliminar este usuario?')">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+<div class="bg-white rounded-2xl border border-chocolate-100 shadow-card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-chocolate-50 border-b border-chocolate-100">
+                    <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Usuario</th>
+                    <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Rol</th>
+                    <th class="text-center px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for usuario in usuarios %}
+                <tr class="table-row">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-bold text-sm
+                                        {% if usuario.rol == 'administrador' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                                {{ usuario.nombre[0] | upper }}
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-800">{{ usuario.nombre }} {{ usuario.apellido }}</p>
+                                <p class="text-xs text-gray-400">#{{ usuario.id_usuario }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-gray-600">{{ usuario.email }}</td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
+                                     {% if usuario.rol == 'administrador' %}bg-red-50 text-red-700{% else %}bg-blue-50 text-blue-700{% endif %}">
+                            {% if usuario.rol == 'administrador' %}
+                            <i class="fas fa-shield-alt mr-1 text-xs"></i>
+                            {% else %}
+                            <i class="fas fa-user mr-1 text-xs"></i>
+                            {% endif %}
+                            {{ usuario.rol | capitalize }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <a href="{{ url_for('usuarios_editar', id=usuario.id_usuario) }}"
+                               title="Editar"
+                               class="w-8 h-8 flex items-center justify-center rounded-lg text-amber-600
+                                      hover:bg-amber-50 transition-colors">
+                                <i class="fas fa-edit text-xs"></i>
+                            </a>
+                            <a href="{{ url_for('usuarios_eliminar', id=usuario.id_usuario) }}"
+                               title="Eliminar"
+                               onclick="return confirm('¿Está seguro de eliminar este usuario?')"
+                               class="w-8 h-8 flex items-center justify-center rounded-lg text-red-500
+                                      hover:bg-red-50 transition-colors">
+                                <i class="fas fa-trash text-xs"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="px-6 py-16 text-center">
+                        <i class="fas fa-users text-gray-200 text-5xl mb-4 block"></i>
+                        <p class="text-gray-400 font-medium">No hay usuarios registrados</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

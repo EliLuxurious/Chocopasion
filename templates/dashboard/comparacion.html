@@ -1,189 +1,210 @@
 {% extends "base.html" %}
 
-{% block title %}Comparación de Períodos - Chocopasión{% endblock %}
+{% block title %}Comparación de Períodos — Chocopasión{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-2">Comparación de Períodos</h1>
-                    <p class="text-muted">Análisis comparativo para toma de decisiones</p>
-                </div>
-                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
-                </a>
-            </div>
+<!-- Cabecera -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Comparación de Períodos</h1>
+        <p class="text-gray-500 mt-0.5">Análisis comparativo para toma de decisiones</p>
+    </div>
+    <a href="{{ url_for('index') }}"
+       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+              text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors shadow-sm">
+        <i class="fas fa-arrow-left text-xs"></i> Volver al Dashboard
+    </a>
+</div>
+
+<!-- Resumen de Comparación (KPI Cards) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+    <!-- Diferencia en Producción -->
+    <div class="bg-white rounded-2xl p-5 border border-chocolate-100 shadow-card hover:shadow-card-hover transition-all duration-300">
+        <div class="flex flex-col items-center text-center">
+            <h6 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Diferencia en Producción</h6>
+            <h2 class="text-3xl font-extrabold tracking-tight {% if diferencia_produccion > 0 %}text-emerald-600{% elif diferencia_produccion < 0 %}text-red-500{% else %}text-gray-500{% endif %}">
+                {% if diferencia_produccion > 0 %}+{% endif %}{{ diferencia_produccion }}
+            </h2>
+            <span class="text-xs text-gray-400 mt-1.5 font-medium">unidades</span>
         </div>
     </div>
 
-    <!-- Resumen de Comparación -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h6 class="text-muted">Diferencia en Producción</h6>
-                    <h2 class="{% if diferencia_produccion > 0 %}text-success{% elif diferencia_produccion < 0 %}text-danger{% else %}text-muted{% endif %}">
-                        {% if diferencia_produccion > 0 %}+{% endif %}{{ diferencia_produccion }}
-                    </h2>
-                    <small class="text-muted">unidades</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h6 class="text-muted">Cambio Porcentual</h6>
-                    <h2 class="{% if porcentaje_cambio > 0 %}text-success{% elif porcentaje_cambio < 0 %}text-danger{% else %}text-muted{% endif %}">
-                        {% if porcentaje_cambio > 0 %}+{% endif %}{{ "%.1f"|format(porcentaje_cambio) }}%
-                    </h2>
-                    <small class="text-muted">vs período anterior</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h6 class="text-muted">Período 1</h6>
-                    <h3 class="text-primary">{{ stats_periodo1.total_produccion or 0 }}</h3>
-                    <small class="text-muted">{{ periodo1_inicio }} a {{ periodo1_fin }}</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h6 class="text-muted">Período 2</h6>
-                    <h3 class="text-info">{{ stats_periodo2.total_produccion or 0 }}</h3>
-                    <small class="text-muted">{{ periodo2_inicio }} a {{ periodo2_fin }}</small>
-                </div>
-            </div>
+    <!-- Cambio Porcentual -->
+    <div class="bg-white rounded-2xl p-5 border border-chocolate-100 shadow-card hover:shadow-card-hover transition-all duration-300">
+        <div class="flex flex-col items-center text-center">
+            <h6 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Cambio Porcentual</h6>
+            <h2 class="text-3xl font-extrabold tracking-tight {% if porcentaje_cambio > 0 %}text-emerald-600{% elif porcentaje_cambio < 0 %}text-red-500{% else %}text-gray-500{% endif %}">
+                {% if porcentaje_cambio > 0 %}+{% endif %}{{ "%.1f"|format(porcentaje_cambio) }}%
+            </h2>
+            <span class="text-xs text-gray-400 mt-1.5 font-medium">vs período anterior</span>
         </div>
     </div>
 
-    <!-- Gráfico de Comparación -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white py-3">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-chart-line text-primary me-2"></i>Tendencia Comparativa
-            </h5>
-        </div>
-        <div class="card-body">
-            <div id="comparacionChart" style="height: 400px;"></div>
-        </div>
-    </div>
-
-    <!-- Tablas de Top Productos -->
-    <div class="row g-4">
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Top Productos - Período 1</h5>
-                    <small>{{ periodo1_inicio }} a {{ periodo1_fin }}</small>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Producto</th>
-                                    <th class="text-end">Cantidad</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for producto in top_productos_p1 %}
-                                <tr>
-                                    <td>{{ producto.nombre }}</td>
-                                    <td class="text-end">{{ producto.total }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Top Productos - Período 2</h5>
-                    <small>{{ periodo2_inicio }} a {{ periodo2_fin }}</small>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Producto</th>
-                                    <th class="text-end">Cantidad</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for producto in top_productos_p2 %}
-                                <tr>
-                                    <td>{{ producto.nombre }}</td>
-                                    <td class="text-end">{{ producto.total }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+    <!-- Período 1 -->
+    <div class="bg-white rounded-2xl p-5 border border-chocolate-100 shadow-card hover:shadow-card-hover transition-all duration-300">
+        <div class="flex flex-col items-center text-center">
+            <h6 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Período 1</h6>
+            <h2 class="text-3xl font-extrabold text-chocolate-700 tracking-tight">
+                {{ stats_periodo1.total_produccion or 0 }}
+            </h2>
+            <span class="text-[10px] text-gray-400 mt-2 truncate w-full" title="{{ periodo1_inicio }} a {{ periodo1_fin }}">
+                {{ periodo1_inicio }} a {{ periodo1_fin }}
+            </span>
         </div>
     </div>
 
-    <!-- Recomendaciones -->
-    <div class="card border-0 shadow-sm mt-4">
-        <div class="card-header bg-warning text-dark">
-            <h5 class="mb-0">
-                <i class="fas fa-lightbulb me-2"></i>Recomendaciones para Toma de Decisiones
-            </h5>
+    <!-- Período 2 -->
+    <div class="bg-white rounded-2xl p-5 border border-chocolate-100 shadow-card hover:shadow-card-hover transition-all duration-300">
+        <div class="flex flex-col items-center text-center">
+            <h6 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Período 2</h6>
+            <h2 class="text-3xl font-extrabold text-gold-500 tracking-tight">
+                {{ stats_periodo2.total_produccion or 0 }}
+            </h2>
+            <span class="text-[10px] text-gray-400 mt-2 truncate w-full" title="{{ periodo2_inicio }} a {{ periodo2_fin }}">
+                {{ periodo2_inicio }} a {{ periodo2_fin }}
+            </span>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    {% if porcentaje_cambio > 10 %}
-                    <div class="alert alert-success">
-                        <strong>📈 Crecimiento Positivo:</strong> La producción ha aumentado significativamente ({{ "%.1f"|format(porcentaje_cambio) }}%). Considera:
-                        <ul class="mb-0 mt-2">
-                            <li>Aumentar la capacidad de producción</li>
-                            <li>Optimizar la cadena de suministro</li>
-                            <li>Analizar demanda futura</li>
-                        </ul>
-                    </div>
-                    {% elif porcentaje_cambio < -10 %}
-                    <div class="alert alert-danger">
-                        <strong>📉 Descenso Significativo:</strong> La producción ha disminuido ({{ "%.1f"|format(porcentaje_cambio) }}%). Revisa:
-                        <ul class="mb-0 mt-2">
-                            <li>Factores que afectan la producción</li>
-                            <li>Estrategias de recuperación</li>
-                            <li>Análisis de costos</li>
-                        </ul>
-                    </div>
+    </div>
+</div>
+
+<!-- Gráfico de Comparación -->
+<div class="bg-white rounded-2xl border border-chocolate-100 shadow-card mb-8 overflow-hidden">
+    <div class="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
+        <i class="fas fa-chart-line text-chocolate-500 text-sm"></i>
+        <h2 class="font-semibold text-gray-800 text-sm">Tendencia Comparativa</h2>
+    </div>
+    <div class="p-6">
+        <div id="comparacionChart" style="height: 380px;"></div>
+    </div>
+</div>
+
+<!-- Tablas de Top Productos -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Período 1 Table -->
+    <div class="bg-white rounded-2xl border border-chocolate-100 shadow-card overflow-hidden">
+        <div class="bg-gradient-to-r from-chocolate-800 to-chocolate-700 px-6 py-4 text-white">
+            <h5 class="font-semibold text-sm">Top Productos — Período 1</h5>
+            <p class="text-chocolate-200 text-xs mt-0.5">{{ periodo1_inicio }} a {{ periodo1_fin }}</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-chocolate-50 border-b border-chocolate-100">
+                        <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Producto</th>
+                        <th class="text-right px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for producto in top_productos_p1 %}
+                    <tr class="table-row">
+                        <td class="px-6 py-4 font-medium text-gray-800">{{ producto.nombre }}</td>
+                        <td class="px-6 py-4 text-right font-bold text-chocolate-700">{{ producto.total }}</td>
+                    </tr>
                     {% else %}
-                    <div class="alert alert-info">
-                        <strong>📊 Producción Estable:</strong> El cambio es moderado ({{ "%.1f"|format(porcentaje_cambio) }}%). Mantén:
-                        <ul class="mb-0 mt-2">
-                            <li>Procesos actuales</li>
-                            <li>Monitoreo continuo</li>
-                            <li>Mejoras incrementales</li>
-                        </ul>
-                    </div>
-                    {% endif %}
+                    <tr>
+                        <td colspan="2" class="px-6 py-8 text-center text-gray-400">Sin datos de productos</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Período 2 Table -->
+    <div class="bg-white rounded-2xl border border-chocolate-100 shadow-card overflow-hidden">
+        <div class="bg-gradient-to-r from-gold-500 to-gold-400 px-6 py-4 text-white">
+            <h5 class="font-semibold text-sm">Top Productos — Período 2</h5>
+            <p class="text-amber-100 text-xs mt-0.5">{{ periodo2_inicio }} a {{ periodo2_fin }}</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-chocolate-50 border-b border-chocolate-100">
+                        <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Producto</th>
+                        <th class="text-right px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for producto in top_productos_p2 %}
+                    <tr class="table-row">
+                        <td class="px-6 py-4 font-medium text-gray-800">{{ producto.nombre }}</td>
+                        <td class="px-6 py-4 text-right font-bold text-gold-500">{{ producto.total }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2" class="px-6 py-8 text-center text-gray-400">Sin datos de productos</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Recomendaciones -->
+<div class="bg-white rounded-2xl border border-chocolate-100 shadow-card overflow-hidden mb-6">
+    <div class="bg-gradient-to-r from-amber-500 to-gold-400 px-6 py-4 text-white">
+        <h5 class="font-semibold text-sm flex items-center gap-2">
+            <i class="fas fa-lightbulb"></i> Recomendaciones para Toma de Decisiones
+        </h5>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                {% if porcentaje_cambio > 10 %}
+                <div class="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 shadow-sm flex flex-col gap-3">
+                    <span class="font-bold flex items-center gap-2 text-sm text-emerald-900">
+                        <i class="fas fa-arrow-trend-up text-lg"></i> Crecimiento Positivo
+                    </span>
+                    <p class="text-sm leading-relaxed">
+                        La producción ha aumentado significativamente en un <strong>{{ "%.1f"|format(porcentaje_cambio) }}%</strong>. Te aconsejamos considerar:
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 text-xs text-emerald-700 ml-1">
+                        <li>Planificar un aumento controlado en la capacidad de producción.</li>
+                        <li>Asegurar y optimizar la cadena de suministro de materias primas.</li>
+                        <li>Analizar la demanda futura para prever cuellos de botella.</li>
+                    </ul>
                 </div>
-                <div class="col-md-6">
-                    <div class="alert alert-light border">
-                        <strong>🎯 Próximas Acciones:</strong>
-                        <ul class="mb-0 mt-2">
-                            <li>Analizar productos de mayor/menor rendimiento</li>
-                            <li>Revisar eficiencia por responsable</li>
-                            <li>Planificar objetivos del próximo período</li>
-                            <li>Evaluar necesidades de capacitación</li>
-                        </ul>
-                    </div>
+                {% elif porcentaje_cambio < -10 %}
+                <div class="p-5 rounded-2xl bg-red-50 border border-red-200 text-red-800 shadow-sm flex flex-col gap-3">
+                    <span class="font-bold flex items-center gap-2 text-sm text-red-950">
+                        <i class="fas fa-arrow-trend-down text-lg"></i> Descenso Significativo
+                    </span>
+                    <p class="text-sm leading-relaxed">
+                        La producción ha disminuido notablemente en un <strong>{{ "%.1f"|format(porcentaje_cambio) }}%</strong>. Se sugiere revisar:
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 text-xs text-red-700 ml-1">
+                        <li>Identificar y mitigar los factores críticos que afectan la producción.</li>
+                        <li>Diseñar y evaluar estrategias rápidas de recuperación operativa.</li>
+                        <li>Realizar un análisis exhaustivo de costos por merma o inactividad.</li>
+                    </ul>
                 </div>
+                {% else %}
+                <div class="p-5 rounded-2xl bg-blue-50 border border-blue-200 text-blue-800 shadow-sm flex flex-col gap-3">
+                    <span class="font-bold flex items-center gap-2 text-sm text-blue-900">
+                        <i class="fas fa-chart-bar text-lg"></i> Producción Estable
+                    </span>
+                    <p class="text-sm leading-relaxed">
+                        El cambio es moderado (<strong>{{ "%.1f"|format(porcentaje_cambio) }}%</strong>). Recomendamos mantener:
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 text-xs text-blue-700 ml-1">
+                        <li>Monitoreo continuo de los procesos operativos actuales.</li>
+                        <li>Implementación de mejoras incrementales de rendimiento.</li>
+                        <li>Aseguramiento de estándares de calidad artesanal.</li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            <div class="p-5 rounded-2xl bg-gray-50 border border-gray-200 text-gray-700 shadow-sm flex flex-col gap-3">
+                <span class="font-bold flex items-center gap-2 text-sm text-gray-900">
+                    <i class="fas fa-bullseye text-chocolate-600"></i> Próximas Acciones Estratégicas
+                </span>
+                <ul class="list-disc list-inside space-y-2 text-xs ml-1 text-gray-600 leading-relaxed">
+                    <li>Analizar a fondo los productos de mayor y menor rendimiento para ajustar el catálogo.</li>
+                    <li>Revisar detalladamente la eficiencia de producción y distribución por responsable.</li>
+                    <li>Planificar objetivos de volumen y calidad para el próximo período evaluado.</li>
+                    <li>Evaluar el rendimiento individual y la necesidad de capacitación del equipo.</li>
+                </ul>
             </div>
         </div>
     </div>
@@ -203,7 +224,10 @@
         type: 'scatter',
         mode: 'lines+markers',
         name: 'Período 1',
-        line: { color: '#0d6efd' }
+        line: { color: '#c4724a', width: 3 },
+        marker: { color: '#6b3d2a', size: 6 },
+        fill: 'tozeroy',
+        fillcolor: 'rgba(196, 114, 74, 0.05)'
     };
     
     const trace2 = {
@@ -212,16 +236,31 @@
         type: 'scatter',
         mode: 'lines+markers',
         name: 'Período 2',
-        line: { color: '#0dcaf0' }
+        line: { color: '#d4a843', width: 3 },
+        marker: { color: '#b8901e', size: 6 },
+        fill: 'tozeroy',
+        fillcolor: 'rgba(212, 168, 67, 0.05)'
     };
     
     const layout = {
-        title: 'Comparación de Tendencias de Producción',
-        xaxis: { title: 'Fecha' },
-        yaxis: { title: 'Cantidad Producida' },
-        margin: { t: 40 }
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        xaxis: { 
+            title: 'Fecha',
+            gridcolor: 'rgba(0,0,0,0.04)',
+            zerolinecolor: 'rgba(0,0,0,0.08)'
+        },
+        yaxis: { 
+            title: 'Cantidad Producida',
+            gridcolor: 'rgba(0,0,0,0.04)',
+            zerolinecolor: 'rgba(0,0,0,0.08)',
+            rangemode: 'tozero'
+        },
+        margin: { t: 20, r: 20, b: 40, l: 50 },
+        font: { family: 'Inter, sans-serif', size: 12 },
+        legend: { orientation: 'h', y: 1.1 }
     };
     
-    Plotly.newPlot('comparacionChart', [trace1, trace2], layout, {responsive: true});
+    Plotly.newPlot('comparacionChart', [trace1, trace2], layout, {responsive: true, displayModeBar: false});
 </script>
 {% endblock %}

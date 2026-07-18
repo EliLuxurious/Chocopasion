@@ -1,1070 +1,296 @@
 {% extends "base.html" %}
-
-{% block title %}Dashboard - Chocopasión{% endblock %}
+{% block title %}Dashboard — Chocopasión{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Header Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-2">Panel de Control</h1>
-                    <p class="text-muted">Bienvenido al panel de control de Chocopasión</p>
-                </div>
-                <div class="d-flex gap-2">
-                    <a href="{{ url_for('export_produccion_excel') }}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&producto={{ producto_seleccionado }}&responsable={{ responsable_seleccionado }}" class="btn btn-outline-success">
-                        <i class="fas fa-file-excel me-2"></i>Exportar Excel
-                    </a>
-                    <!-- Reemplaza el enlace PDF por este botón -->
-                    <button id="exportarPDF" class="btn btn-outline-danger" type="button">
-                        <i class="fas fa-file-pdf me-2"></i>Exportar PDF
-                    </button>
-                </div>
-            </div>
-        </div>
+<!-- ── Cabecera ─────────────────────────────────────────────────────────── -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Panel de Control</h1>
+        <p class="text-gray-500 mt-0.5">Análisis de producción de Chocopasión</p>
     </div>
-
-    <!-- Stats Cards -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="flex-shrink-0">
-                            <div class="stats-icon bg-primary bg-opacity-10 text-primary">
-                                <i class="fas fa-cube"></i>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="card-subtitle text-muted mb-1">Total Productos</h6>
-                            <h2 class="card-title mb-0">{{ total_productos }}</h2>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="flex-shrink-0">
-                            <div class="stats-icon bg-success bg-opacity-10 text-success">
-                                <i class="fas fa-users"></i>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="card-subtitle text-muted mb-1">Total Responsables</h6>
-                            <h2 class="card-title mb-0">{{ total_responsables }}</h2>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="flex-shrink-0">
-                            <div class="stats-icon bg-info bg-opacity-10 text-info">
-                                <i class="fas fa-industry"></i>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="card-subtitle text-muted mb-1">Producción Total</h6>
-                            <h2 class="card-title mb-0">{{ total_produccion }}</h2>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="flex gap-2">
+        <a href="{{ url_for('export_produccion_excel') }}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&producto={{ producto_seleccionado }}&responsable={{ responsable_seleccionado }}"
+           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                  bg-emerald-50 text-emerald-700 border border-emerald-200
+                  hover:bg-emerald-100 transition-colors duration-200">
+            <i class="fas fa-file-excel"></i> Excel
+        </a>
+        <button id="exportarPDF" type="button"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                       bg-red-50 text-red-700 border border-red-200
+                       hover:bg-red-100 transition-colors duration-200">
+            <i class="fas fa-file-pdf"></i> PDF
+        </button>
     </div>
-
-    <!-- Nueva sección: Stats Cards para Ventas -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="flex-shrink-0">
-                            <div class="stats-icon bg-warning bg-opacity-10 text-warning">
-                                <i class="fas fa-shopping-cart"></i>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="card-subtitle text-muted mb-1">Total Ventas</h6>
-                            <h2 class="card-title mb-0">{{ total_ventas }}</h2>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="flex-shrink-0">
-                            <div class="stats-icon bg-success bg-opacity-10 text-success">
-                                <i class="fas fa-dollar-sign"></i>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="card-subtitle text-muted mb-1">Ingresos Totales</h6>
-                            <h2 class="card-title mb-0">${{ ingresos_totales }}</h2>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="flex-shrink-0">
-                            <div class="stats-icon bg-danger bg-opacity-10 text-danger">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="card-subtitle text-muted mb-1">Promedio por Venta</h6>
-                            <h2 class="card-title mb-0">${{ promedio_venta }}</h2>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="flex-shrink-0">
-                            <div class="stats-icon bg-info bg-opacity-10 text-info">
-                                <i class="fas fa-percentage"></i>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="card-subtitle text-muted mb-1">Ratio Ventas/Prod.</h6>
-                            <h2 class="card-title mb-0">{{ ratio_ventas_produccion }}%</h2>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filters Section -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white py-3">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-filter text-primary me-2"></i>Filtros de Reporte
-            </h5>
-        </div>
-        <div class="card-body">
-            <form action="{{ url_for('dashboard_filtrar') }}" method="GET" class="row g-3">
-                <div class="col-md-3">
-                    <label for="fecha_inicio" class="form-label">Fecha inicio</label>
-                    <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
-                </div>
-                <div class="col-md-3">
-                    <label for="fecha_fin" class="form-label">Fecha fin</label>
-                    <input type="date" id="fecha_fin" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
-                </div>
-                <div class="col-md-3">
-                    <label for="producto" class="form-label">Producto</label>
-                    <select id="producto" name="producto" class="form-select">
-                        <option value="0">Todos los productos</option>
-                        {% for prod in productos %}
-                            <option value="{{ prod.id_producto }}" {% if producto_seleccionado == prod.id_producto|string %}selected{% endif %}>{{ prod.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="responsable" class="form-label">Responsable</label>
-                    <select id="responsable" name="responsable" class="form-select">
-                        <option value="0">Todos los responsables</option>
-                        {% for resp in responsables %}
-                            <option value="{{ resp.id_responsable }}" {% if responsable_seleccionado == resp.id_responsable|string %}selected{% endif %}>{{ resp.nombre }} {{ resp.apellido }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-12 text-end">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search me-2"></i>Filtrar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Comparison Section -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white py-3">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-chart-bar text-primary me-2"></i>Comparación de Períodos
-            </h5>
-        </div>
-        <div class="card-body">
-            <form action="{{ url_for('dashboard_comparar') }}" method="GET" class="row g-3">
-                <div class="col-md-3">
-                    <label for="periodo1_inicio" class="form-label">Período 1 - Inicio</label>
-                    <input type="date" id="periodo1_inicio" name="periodo1_inicio" class="form-control">
-                </div>
-                <div class="col-md-3">
-                    <label for="periodo1_fin" class="form-label">Período 1 - Fin</label>
-                    <input type="date" id="periodo1_fin" name="periodo1_fin" class="form-control">
-                </div>
-                <div class="col-md-3">
-                    <label for="periodo2_inicio" class="form-label">Período 2 - Inicio</label>
-                    <input type="date" id="periodo2_inicio" name="periodo2_inicio" class="form-control">
-                </div>
-                <div class="col-md-3">
-                    <label for="periodo2_fin" class="form-label">Período 2 - Fin</label>
-                    <input type="date" id="periodo2_fin" name="periodo2_fin" class="form-control">
-                </div>
-                <div class="col-12 text-end">
-                    <button type="submit" class="btn btn-info">
-                        <i class="fas fa-balance-scale me-2"></i>Comparar Períodos
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Charts Section -->
-    <div class="row g-4 mb-4">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white py-3">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-line text-primary me-2"></i>Producción por Producto
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="height: 300px;">
-                        <div id="productsChartPlotly" style="height: 300px;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white py-3">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-trophy text-primary me-2"></i>Top Productos
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        {% for label, value in zip(labels, values) %}
-                            <div class="list-group-item px-0">
-                                <div class="d-flex align-items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded">
-                                            <i class="fas fa-cookie"></i>
-                                        </div>
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        <h6 class="mb-1">{{ label }}</h6>
-                                        <p class="text-muted mb-0">{{ value }} unidades</p>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Daily Production Chart -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white py-3">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-calendar-day text-primary me-2"></i>Producción Diaria
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="chart-container" style="height: 300px;">
-                <div id="dailyProductionChartPlotly" style="height: 300px;"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Producción por Responsable Chart -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white py-3">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-user-friends text-primary me-2"></i>Producción por Responsable
-            </h5>
-        </div>
-        <div class="card-body">
-            <div id="responsablesChart" style="height: 350px;"></div>
-        </div>
-    </div>
-
-    <!-- Nueva sección: Gráficos de Ventas -->
-    <div class="row g-4 mb-4">
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-pie text-success me-2"></i>Ventas por Producto
-                    </h5>
-                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="exportarGrafico('ventasProductoChart', 'ventas_por_producto')">
-                        <i class="fas fa-download me-1"></i>Exportar
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="height: 300px;">
-                        <div id="ventasProductoChart" style="height: 300px;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-line text-warning me-2"></i>Ventas Diarias
-                    </h5>
-                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="exportarGrafico('ventasDiariasChart', 'ventas_diarias')">
-                        <i class="fas fa-download me-1"></i>Exportar
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="height: 300px;">
-                        <div id="ventasDiariasChart" style="height: 300px;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Nueva sección: Comparativa Ventas vs Producción -->
-    <div class="row g-4 mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-balance-scale text-primary me-2"></i>Comparativa: Ventas vs Producción
-                    </h5>
-                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="exportarGrafico('comparativaChart', 'comparativa_ventas_produccion')">
-                        <i class="fas fa-download me-1"></i>Exportar
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-md-2">
-                            <label for="tipoGrafico" class="form-label">Tipo de gráfico</label>
-                            <select id="tipoGrafico" class="form-select">
-                                <option value="bar">Barras</option>
-                                <option value="line">Líneas</option>
-                                <option value="pie-produccion">Pastel - Producción</option>
-                                <option value="pie-ventas">Pastel - Ventas</option>
-                                <option value="scatter">Dispersión</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="comparativaProducto" class="form-label">Producto</label>
-                            <select id="comparativaProducto" class="form-select">
-                                <option value="">Todos los productos</option>
-                                {% for prod in productos %}
-                                <option value="{{ prod.id_producto }}">{{ prod.nombre }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label for="comparativaFechaInicio" class="form-label">Fecha inicio</label>
-                            <input type="date" id="comparativaFechaInicio" class="form-control" value="{{ fecha_inicio }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label for="comparativaFechaFin" class="form-label">Fecha fin</label>
-                            <input type="date" id="comparativaFechaFin" class="form-control" value="{{ fecha_fin }}">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="btnActualizar" class="form-label">&nbsp;</label>
-                            <button type="button" id="btnActualizar" class="btn btn-primary w-100" onclick="actualizarComparativa()">
-                                <i class="fas fa-sync me-1"></i>Actualizar Gráfico
-                            </button>
-                        </div>
-                    </div>
-                    <div class="chart-container" style="height: 400px;">
-                        <div id="comparativaChart" style="height: 400px;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Nueva sección: Top Productos en Ventas -->
-    <div class="row g-4 mb-4">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-bar text-info me-2"></i>Ingresos por Producto
-                    </h5>
-                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="exportarGrafico('ingresosChart', 'ingresos_por_producto')">
-                        <i class="fas fa-download me-1"></i>Exportar
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="height: 300px;">
-                        <div id="ingresosChart" style="height: 300px;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white py-3">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-crown text-warning me-2"></i>Top Ventas
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        {% for venta in top_ventas %}
-                            <div class="list-group-item px-0">
-                                <div class="d-flex align-items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="avatar-sm bg-warning bg-opacity-10 text-warning rounded">
-                                            <i class="fas fa-medal"></i>
-                                        </div>
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        <h6 class="mb-1">{{ venta.producto_nombre }}</h6>
-                                        <p class="text-muted mb-0">{{ venta.cantidad }} unidades - ${{ venta.ingresos }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filtered Results -->
-    {% if mostrar_resultados %}
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-list text-primary me-2"></i>Resultados del Filtro
-            </h5>
-            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-times me-1"></i>Quitar Filtro
-            </a>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Producto</th>
-                            <th>Presentación</th>
-                            <th>Cantidad</th>
-                            <th>Responsables</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for prod in producciones %}
-                        <tr>
-                            <td>{{ prod.fecha.strftime('%d/%m/%Y') }}</td>
-                            <td>{{ prod.producto }}</td>
-                            <td>{{ prod.presentacion }}</td>
-                            <td>{{ prod.cantidad }}</td>
-                            <td>{{ prod.responsables }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <!-- PAGINACIÓN -->
-            <nav aria-label="Paginación de resultados" class="mt-3">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item {% if pagina_actual == 1 %}disabled{% endif %}">
-                        <a class="page-link"
-                           href="{{ url_for('dashboard_filtrar', pagina=pagina_actual-1) }}{% if query_string %}&{{ query_string }}{% endif %}">
-                            Anterior
-                        </a>
-                    </li>
-                    <li class="page-item active">
-                        <span class="page-link">
-                            Página {{ pagina_actual }}
-                        </span>
-                    </li>
-                    <li class="page-item {% if pagina_actual == total_paginas %}disabled{% endif %}">
-                        <a class="page-link"
-                           href="{{ url_for('dashboard_filtrar', pagina=pagina_actual+1) }}{% if query_string %}&{{ query_string }}{% endif %}">
-                            Siguiente
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-    </div>
-    {% endif %}
 </div>
-{% endblock %}
 
-{% block extra_css %}
-<style>
-    .stats-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-    }
+<!-- ── KPI Cards — Producción ─────────────────────────────────────────── -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <!-- Total Productos -->
+    <div class="bg-white rounded-2xl p-5 border border-chocolate-100 shadow-card">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                <i class="fas fa-cube text-blue-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Productos</p>
+                <p class="text-2xl font-bold text-gray-900 mt-0.5">{{ total_productos }}</p>
+            </div>
+        </div>
+    </div>
+    <!-- Total Responsables -->
+    <div class="bg-white rounded-2xl p-5 border border-chocolate-100 shadow-card">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
+                <i class="fas fa-users text-purple-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Responsables</p>
+                <p class="text-2xl font-bold text-gray-900 mt-0.5">{{ total_responsables }}</p>
+            </div>
+        </div>
+    </div>
+    <!-- Producción Total -->
+    <div class="bg-white rounded-2xl p-5 border border-chocolate-100 shadow-card">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-chocolate-50 flex items-center justify-center shrink-0">
+                <i class="fas fa-industry text-chocolate-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Producción Total</p>
+                <p class="text-2xl font-bold text-gray-900 mt-0.5">{{ total_produccion }}</p>
+            </div>
+        </div>
+    </div>
+</div>
 
-    .avatar-sm {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1rem;
-    }
+<!-- ── Filtros ─────────────────────────────────────────────────────────── -->
+<div class="bg-white rounded-2xl border border-chocolate-100 shadow-card mb-6">
+    <div class="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
+        <i class="fas fa-filter text-chocolate-500 text-sm"></i>
+        <h2 class="font-semibold text-gray-800 text-sm">Filtros de Reporte</h2>
+    </div>
+    <form action="{{ url_for('dashboard_filtrar') }}" method="GET"
+          class="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+        <div>
+            <label for="fecha_inicio" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Fecha inicio</label>
+            <input type="date" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}"
+                   class="w-full px-3 py-2 bg-chocolate-50 border border-gray-200 rounded-xl text-sm
+                          focus:outline-none focus:ring-2 focus:ring-chocolate-400 focus:border-transparent transition-all">
+        </div>
+        <div>
+            <label for="fecha_fin" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Fecha fin</label>
+            <input type="date" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin }}"
+                   class="w-full px-3 py-2 bg-chocolate-50 border border-gray-200 rounded-xl text-sm
+                          focus:outline-none focus:ring-2 focus:ring-chocolate-400 focus:border-transparent transition-all">
+        </div>
+        <div>
+            <label for="producto" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Producto</label>
+            <select id="producto" name="producto"
+                    class="w-full px-3 py-2 bg-chocolate-50 border border-gray-200 rounded-xl text-sm
+                           focus:outline-none focus:ring-2 focus:ring-chocolate-400 focus:border-transparent transition-all">
+                <option value="0">Todos los productos</option>
+                {% for prod in productos %}
+                <option value="{{ prod.id_producto }}" {% if producto_seleccionado == prod.id_producto|string %}selected{% endif %}>{{ prod.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="responsable" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Responsable</label>
+            <select id="responsable" name="responsable"
+                    class="w-full px-3 py-2 bg-chocolate-50 border border-gray-200 rounded-xl text-sm
+                           focus:outline-none focus:ring-2 focus:ring-chocolate-400 focus:border-transparent transition-all">
+                <option value="0">Todos los responsables</option>
+                {% for resp in responsables %}
+                <option value="{{ resp.id_responsable }}" {% if responsable_seleccionado == resp.id_responsable|string %}selected{% endif %}>{{ resp.nombre }} {{ resp.apellido }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <button type="submit"
+                    class="w-full px-4 py-2 bg-chocolate-700 hover:bg-chocolate-800 text-white text-sm font-semibold
+                           rounded-xl transition-colors duration-200 flex items-center justify-center gap-2">
+                <i class="fas fa-search"></i> Filtrar
+            </button>
+        </div>
+    </form>
+</div>
 
-    .chart-container {
-        position: relative;
-    }
+<!-- ── Gráficos — Producción ──────────────────────────────────────────── -->
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-5 mb-6">
+    <!-- Producción por Producto (pie) -->
+    <div class="lg:col-span-3 bg-white rounded-2xl border border-chocolate-100 shadow-card">
+        <div class="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
+            <i class="fas fa-chart-pie text-chocolate-500 text-sm"></i>
+            <h2 class="font-semibold text-gray-800 text-sm">Producción por Producto</h2>
+        </div>
+        <div class="p-4">
+            <div id="productsChartPlotly" style="height:300px;"></div>
+        </div>
+    </div>
+    <!-- Top Productos -->
+    <div class="lg:col-span-2 bg-white rounded-2xl border border-chocolate-100 shadow-card">
+        <div class="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
+            <i class="fas fa-trophy text-gold-400 text-sm"></i>
+            <h2 class="font-semibold text-gray-800 text-sm">Top Productos</h2>
+        </div>
+        <div class="p-4 space-y-2">
+            {% for label, value in zip(labels, values) %}
+            <div class="flex items-center gap-3 p-3 rounded-xl hover:bg-chocolate-50 transition-colors">
+                <div class="w-8 h-8 rounded-lg bg-chocolate-100 flex items-center justify-center shrink-0">
+                    <i class="fas fa-cookie text-chocolate-600 text-xs"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-800 truncate">{{ label }}</p>
+                    <p class="text-xs text-gray-400">{{ value }} unidades</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
 
-    .table > :not(caption) > * > * {
-        padding: 1rem;
-    }
+<!-- ── Gráficos — Diario y Responsable ───────────────────────────────── -->
+<div class="bg-white rounded-2xl border border-chocolate-100 shadow-card mb-6">
+    <div class="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
+        <i class="fas fa-calendar-day text-chocolate-500 text-sm"></i>
+        <h2 class="font-semibold text-gray-800 text-sm">Producción Diaria</h2>
+    </div>
+    <div class="p-4"><div id="dailyProductionChartPlotly" style="height:280px;"></div></div>
+</div>
 
-    .table thead th {
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.85rem;
-        letter-spacing: 0.5px;
-    }
+<div class="bg-white rounded-2xl border border-chocolate-100 shadow-card mb-6">
+    <div class="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
+        <i class="fas fa-user-friends text-chocolate-500 text-sm"></i>
+        <h2 class="font-semibold text-gray-800 text-sm">Producción por Responsable</h2>
+    </div>
+    <div class="p-4"><div id="responsablesChart" style="height:300px;"></div></div>
+</div>
 
-    .form-label {
-        font-weight: 500;
-        font-size: 0.9rem;
-    }
 
-    .form-control, .form-select {
-        border-radius: 8px;
-        padding: 0.6rem 1rem;
-    }
-
-    .btn {
-        padding: 0.6rem 1.2rem;
-        font-weight: 500;
-    }
-</style>
+<!-- ── Resultados filtrados ────────────────────────────────────────────── -->
+{% if mostrar_resultados %}
+<div class="bg-white rounded-2xl border border-chocolate-100 shadow-card mb-6">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-list text-chocolate-500 text-sm"></i>
+            <h2 class="font-semibold text-gray-800 text-sm">Resultados del Filtro</h2>
+        </div>
+        <a href="{{ url_for('index') }}"
+           class="text-xs text-gray-500 hover:text-red-500 flex items-center gap-1 transition-colors">
+            <i class="fas fa-times"></i> Quitar filtro
+        </a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-chocolate-50">
+                    <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Fecha</th>
+                    <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Producto</th>
+                    <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Presentación</th>
+                    <th class="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Cantidad</th>
+                    <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Responsables</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for prod in producciones %}
+                <tr class="table-row">
+                    <td class="px-6 py-3 text-gray-600">{{ prod.fecha.strftime('%d/%m/%Y') }}</td>
+                    <td class="px-6 py-3 font-medium text-gray-800">{{ prod.producto }}</td>
+                    <td class="px-6 py-3">
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{{ prod.presentacion }}</span>
+                    </td>
+                    <td class="px-6 py-3 text-right font-bold text-chocolate-700">{{ prod.cantidad }}</td>
+                    <td class="px-6 py-3 text-gray-600">{{ prod.responsables }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <!-- Paginación -->
+    <div class="flex items-center justify-center gap-2 px-6 py-4 border-t border-gray-100">
+        <a href="{{ url_for('dashboard_filtrar', pagina=pagina_actual-1) }}{% if query_string %}&{{ query_string }}{% endif %}"
+           class="px-4 py-2 rounded-lg text-sm font-medium
+                  {% if pagina_actual == 1 %}text-gray-300 cursor-not-allowed pointer-events-none{% else %}text-chocolate-700 hover:bg-chocolate-100 transition-colors{% endif %}">
+            ← Anterior
+        </a>
+        <span class="px-4 py-2 rounded-lg bg-chocolate-700 text-white text-sm font-medium">
+            Página {{ pagina_actual }}
+        </span>
+        <a href="{{ url_for('dashboard_filtrar', pagina=pagina_actual+1) }}{% if query_string %}&{{ query_string }}{% endif %}"
+           class="px-4 py-2 rounded-lg text-sm font-medium
+                  {% if pagina_actual == total_paginas %}text-gray-300 cursor-not-allowed pointer-events-none{% else %}text-chocolate-700 hover:bg-chocolate-100 transition-colors{% endif %}">
+            Siguiente →
+        </a>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
-    // ===== VARIABLES GLOBALES =====
-    // Datos desde Flask - definidas globalmente para acceso en todas las funciones
+    // Paleta chocolatera para Plotly
+    const CHOCO_PALETTE = ['#6b3d2a','#c4724a','#d4a843','#4a2c1e','#a85530','#ebcbb6','#2d1a12','#f5e6dc'];
+
     window.dashboardData = {
         labels: {{ labels|tojson }},
         values: {{ values|tojson }},
         dailyLabels: {{ daily_labels|tojson }},
         dailyValues: {{ daily_values|tojson }},
         responsablesLabels: {{ responsables_labels|tojson }},
-        responsablesValues: {{ responsables_values|tojson }},
-        ventasLabels: {{ ventas_labels|default([])|tojson }},
-        ventasValues: {{ ventas_values|default([])|tojson }},
-        ventasDiariasLabels: {{ ventas_diarias_labels|default([])|tojson }},
-        ventasDiariasValues: {{ ventas_diarias_values|default([])|tojson }},
-        ingresosLabels: {{ ingresos_labels|default([])|tojson }},
-        ingresosValues: {{ ingresos_values|default([])|tojson }},
-        comparativaLabels: {{ comparativa_labels|default([])|tojson }},
-        comparativaProduccion: {{ comparativa_produccion|default([])|tojson }},
-        comparativaVentas: {{ comparativa_ventas|default([])|tojson }}
+        responsablesValues: {{ responsables_values|tojson }}
     };
 
-    // Esperar a que el DOM y Plotly estén completamente cargados
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 DOM cargado, iniciando dashboard...');
-        
-        // Verificar que Plotly esté cargado
-        if (typeof Plotly === 'undefined') {
-            console.error('❌ Plotly no se ha cargado correctamente');
-            alert('Error: No se puede cargar la librería de gráficos. Verifique su conexión a internet.');
-            return;
-        } else {
-            console.log('✅ Plotly cargado correctamente');
-        }
+    const plotlyConfig = { responsive: true, displayModeBar: false };
+    const baseLayout = { paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', margin: { t: 30, r: 10, b: 40, l: 40 }, font: { family: 'Inter, sans-serif', size: 12 } };
 
-        // Acceso rápido a los datos globales
-        const data = window.dashboardData;
+    document.addEventListener('DOMContentLoaded', function () {
+        const d = window.dashboardData;
 
-        // Debug logs
-        console.log('📊 Todos los datos recibidos:', data);
+        // 1. Pie Producción por Producto
+        Plotly.newPlot('productsChartPlotly', [{ labels: d.labels, values: d.values, type: 'pie', hole: 0.5, marker: { colors: CHOCO_PALETTE } }],
+            { ...baseLayout, showlegend: true }, plotlyConfig);
 
-        // ===== GRÁFICOS DE PRODUCCIÓN =====
-        
-        // 1. Producción por Producto (Pie Chart)
-        try {
-            const dataProducts = [{
-                labels: data.labels,
-                values: data.values,
-                type: 'pie',
-                hole: .5,
-                marker: {
-                    colors: ['#4361ee', '#3a0ca3', '#4cc9f0', '#4895ef', '#560bad']
-                }
-            }];
-            const layoutProducts = {
-                title: 'Producción por Producto',
-                showlegend: true,
-                margin: { t: 40 }
-            };
-            Plotly.newPlot('productsChartPlotly', dataProducts, layoutProducts, {responsive: true});
-            console.log('✅ Gráfico producción por producto creado');
-        } catch (error) {
-            console.error('❌ Error en gráfico producción por producto:', error);
-        }
+        // 2. Línea Producción Diaria
+        Plotly.newPlot('dailyProductionChartPlotly', [{
+            x: d.dailyLabels, y: d.dailyValues, type: 'scatter', mode: 'lines+markers',
+            line: { color: '#6b3d2a', width: 3 }, marker: { color: '#d4a843', size: 7 },
+            fill: 'tozeroy', fillcolor: 'rgba(107,61,42,0.08)', name: 'Producción'
+        }], { ...baseLayout, xaxis: { title: 'Fecha', tickangle: -30 }, yaxis: { title: 'Cantidad', rangemode: 'tozero' } }, plotlyConfig);
 
-        // 2. Producción Diaria (Line Chart)
-        try {
-            const dataDaily = [{
-                x: data.dailyLabels,
-                y: data.dailyValues,
-                type: 'scatter',
-                mode: 'lines+markers',
-                line: { color: '#4361ee', width: 3 },
-                marker: { color: '#fff', size: 8, line: { color: '#4361ee', width: 2 } },
-                fill: 'tozeroy',
-                fillcolor: 'rgba(67, 97, 238, 0.1)',
-                name: 'Producción Diaria'
-            }];
-            const layoutDaily = {
-                title: 'Producción Diaria',
-                xaxis: { title: 'Fecha' },
-                yaxis: { title: 'Cantidad', rangemode: 'tozero' },
-                margin: { t: 40 }
-            };
-            Plotly.newPlot('dailyProductionChartPlotly', dataDaily, layoutDaily, {responsive: true});
-            console.log('✅ Gráfico producción diaria creado');
-        } catch (error) {
-            console.error('❌ Error en gráfico producción diaria:', error);
-        }
+        // 3. Barras Producción por Responsable
+        Plotly.newPlot('responsablesChart', [{
+            x: d.responsablesLabels, y: d.responsablesValues, type: 'bar',
+            marker: { color: CHOCO_PALETTE, opacity: 0.9 }
+        }], { ...baseLayout, xaxis: { title: 'Responsable' }, yaxis: { title: 'Cantidad', rangemode: 'tozero' } }, plotlyConfig);
 
-        // 3. Producción por Responsable (Bar Chart)
-        try {
-            const dataResp = [{
-                x: data.responsablesLabels,
-                y: data.responsablesValues,
-                type: 'bar',
-                marker: {color: '#3a0ca3'}
-            }];
-            const layoutResp = {
-                title: 'Producción por Responsable',
-                xaxis: {title: 'Responsable'},
-                yaxis: {title: 'Cantidad'},
-                margin: {t: 40}
-            };
-            Plotly.newPlot('responsablesChart', dataResp, layoutResp, {responsive: true});
-            console.log('✅ Gráfico producción por responsable creado');
-        } catch (error) {
-            console.error('❌ Error en gráfico producción por responsable:', error);
-        }
-
-        // ===== GRÁFICOS DE VENTAS =====
-        
-        // 4. Ventas por Producto (Donut Chart)
-        try {
-            const dataVentasProducto = [{
-                labels: data.ventasLabels.length > 0 ? data.ventasLabels : ['Sin datos'],
-                values: data.ventasValues.length > 0 ? data.ventasValues : [1],
-                type: 'pie',
-                hole: .6,
-                marker: {
-                    colors: ['#28a745', '#20c997', '#6f42c1', '#fd7e14', '#dc3545', '#ffc107']
-                }
-            }];
-            const layoutVentasProducto = {
-                title: 'Ventas por Producto',
-                showlegend: true,
-                margin: { t: 40 }
-            };
-            Plotly.newPlot('ventasProductoChart', dataVentasProducto, layoutVentasProducto, {responsive: true});
-            console.log('✅ Gráfico ventas por producto creado');
-        } catch (error) {
-            console.error('❌ Error en gráfico ventas por producto:', error);
-        }
-
-        // 5. Ventas Diarias (Line Chart)
-        try {
-            const dataVentasDiarias = [{
-                x: data.ventasDiariasLabels.length > 0 ? data.ventasDiariasLabels : ['Sin datos'],
-                y: data.ventasDiariasValues.length > 0 ? data.ventasDiariasValues : [0],
-                type: 'scatter',
-                mode: 'lines+markers',
-                line: { color: '#28a745', width: 3 },
-                marker: { color: '#fff', size: 8, line: { color: '#28a745', width: 2 } },
-                fill: 'tozeroy',
-                fillcolor: 'rgba(40, 167, 69, 0.1)',
-                name: 'Ventas Diarias'
-            }];
-            const layoutVentasDiarias = {
-                title: 'Ventas Diarias',
-                xaxis: { title: 'Fecha' },
-                yaxis: { title: 'Cantidad Vendida', rangemode: 'tozero' },
-                margin: { t: 40 }
-            };
-            Plotly.newPlot('ventasDiariasChart', dataVentasDiarias, layoutVentasDiarias, {responsive: true});
-            console.log('✅ Gráfico ventas diarias creado');
-        } catch (error) {
-            console.error('❌ Error en gráfico ventas diarias:', error);
-        }
-
-        // 6. Ingresos por Producto (Bar Chart)
-        try {
-            const dataIngresos = [{
-                x: data.ingresosLabels.length > 0 ? data.ingresosLabels : ['Sin datos'],
-                y: data.ingresosValues.length > 0 ? data.ingresosValues : [0],
-                type: 'bar',
-                marker: {
-                    color: '#17a2b8',
-                    opacity: 0.8
-                }
-            }];
-            const layoutIngresos = {
-                title: 'Ingresos por Producto',
-                xaxis: { title: 'Producto' },
-                yaxis: { title: 'Ingresos ($)', rangemode: 'tozero' },
-                margin: { t: 40 }
-            };
-            Plotly.newPlot('ingresosChart', dataIngresos, layoutIngresos, {responsive: true});
-            console.log('✅ Gráfico ingresos por producto creado');
-        } catch (error) {
-            console.error('❌ Error en gráfico ingresos:', error);
-        }
-
-        // 7. Comparativa Ventas vs Producción (Grouped Bar Chart)
-        try {
-            const dataComparativa = [
-                {
-                    x: data.comparativaLabels.length > 0 ? data.comparativaLabels : ['Sin datos'],
-                    y: data.comparativaProduccion.length > 0 ? data.comparativaProduccion : [0],
-                    name: 'Producción',
-                    type: 'bar',
-                    marker: { color: '#4361ee' }
-                },
-                {
-                    x: data.comparativaLabels.length > 0 ? data.comparativaLabels : ['Sin datos'],
-                    y: data.comparativaVentas.length > 0 ? data.comparativaVentas : [0],
-                    name: 'Ventas',
-                    type: 'bar',
-                    marker: { color: '#28a745' }
-                }
-            ];
-            window.layoutComparativa = {
-                title: 'Comparativa: Producción vs Ventas',
-                xaxis: { title: 'Producto' },
-                yaxis: { title: 'Cantidad', rangemode: 'tozero' },
-                barmode: 'group',
-                margin: { t: 40 }
-            };
-            Plotly.newPlot('comparativaChart', dataComparativa, window.layoutComparativa, {responsive: true});
-            console.log('✅ Gráfico comparativo creado');
-        } catch (error) {
-            console.error('❌ Error en gráfico comparativo:', error);
-        }
-        
-        console.log('🎉 Todos los gráficos han sido creados exitosamente');
-
-        // ===== EVENT LISTENERS =====
-        
-        // Event listener para cambio de tipo de gráfico
-        const tipoGraficoSelect = document.getElementById('tipoGrafico');
-        if (tipoGraficoSelect) {
-            tipoGraficoSelect.addEventListener('change', function() {
-                console.log('🔄 Tipo de gráfico cambiado a:', this.value);
-                actualizarComparativa();
-            });
-        }
-        
-        // Event listeners para los filtros de la comparativa
-        const comparativaProducto = document.getElementById('comparativaProducto');
-        const comparativaFechaInicio = document.getElementById('comparativaFechaInicio');
-        const comparativaFechaFin = document.getElementById('comparativaFechaFin');
-        
-        if (comparativaProducto) {
-            comparativaProducto.addEventListener('change', function() {
-                console.log('🔄 Producto cambiado:', this.value);
-                actualizarComparativa();
-            });
-        }
-        
-        if (comparativaFechaInicio) {
-            comparativaFechaInicio.addEventListener('change', function() {
-                console.log('🔄 Fecha inicio cambiada:', this.value);
-                actualizarComparativa();
-            });
-        }
-        
-        if (comparativaFechaFin) {
-            comparativaFechaFin.addEventListener('change', function() {
-                console.log('🔄 Fecha fin cambiada:', this.value);
-                actualizarComparativa();
-            });
-        }
-        
         // Exportar PDF
-        const exportarPDFBtn = document.getElementById('exportarPDF');
-        if (exportarPDFBtn) {
-            exportarPDFBtn.addEventListener('click', async function() {
-                try {
-                    console.log('📄 Iniciando exportación de PDF...');
-                    // Captura todos los gráficos como imágenes base64
-                    const productsImg = await Plotly.toImage('productsChartPlotly', {format: 'png', width: 700, height: 350});
-                    const dailyImg = await Plotly.toImage('dailyProductionChartPlotly', {format: 'png', width: 700, height: 350});
-                    const respImg = await Plotly.toImage('responsablesChart', {format: 'png', width: 700, height: 350});
-                    const ventasProductoImg = await Plotly.toImage('ventasProductoChart', {format: 'png', width: 700, height: 350});
-                    const ventasDiariasImg = await Plotly.toImage('ventasDiariasChart', {format: 'png', width: 700, height: 350});
-                    const ingresosImg = await Plotly.toImage('ingresosChart', {format: 'png', width: 700, height: 350});
-                    const comparativaImg = await Plotly.toImage('comparativaChart', {format: 'png', width: 900, height: 400});
-
-                    // Obtén los valores de los filtros actuales
-                    const params = new URLSearchParams(new FormData(document.querySelector('form')));
-                    
-                    // Envía las imágenes y los filtros al backend
-                    fetch('{{ url_for("export_dashboard_pdf") }}', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            filters: Object.fromEntries(params.entries()),
-                            images: {
-                                productsImg: productsImg,
-                                dailyImg: dailyImg,
-                                respImg: respImg,
-                                ventasProductoImg: ventasProductoImg,
-                                ventasDiariasImg: ventasDiariasImg,
-                                ingresosImg: ingresosImg,
-                                comparativaImg: comparativaImg
-                            }
-                        })
-                    })
-                    .then(response => response.blob())
-                    .then(blob => {
-                        // Descarga el PDF generado
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'dashboard_completo.pdf';
-                        document.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                        window.URL.revokeObjectURL(url);
-                        console.log('✅ PDF exportado exitosamente');
-                    });
-                } catch (error) {
-                    console.error('❌ Error al exportar PDF:', error);
-                    alert('Error al exportar el PDF');
+        document.getElementById('exportarPDF')?.addEventListener('click', async () => {
+            try {
+                const imgIds = ['productsChartPlotly','dailyProductionChartPlotly','responsablesChart'];
+                const images = {};
+                for (const id of imgIds) {
+                    images[id] = await Plotly.toImage(id, { format: 'png', width: 700, height: 350 });
                 }
-            });
-        }
+                const resp = await fetch('{{ url_for("export_dashboard_pdf") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filters: {}, images })
+                });
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                Object.assign(document.createElement('a'), { href: url, download: 'dashboard.pdf' }).click();
+                URL.revokeObjectURL(url);
+            } catch (e) { console.error(e); }
+        });
     });
 
-    // ===== FUNCIONES GLOBALES =====
-    
-    // Función para exportar gráfico individual
-    window.exportarGrafico = async function(chartId, fileName) {
+    window.exportarGrafico = async function (chartId, fileName) {
         try {
-            console.log(`📊 Exportando gráfico: ${chartId}`);
-            const img = await Plotly.toImage(chartId, {format: 'png', width: 1200, height: 600});
-            
-            // Crear un enlace de descarga
-            const link = document.createElement('a');
-            link.href = img;
-            link.download = fileName + '.png';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            console.log(`✅ Gráfico ${chartId} exportado`);
-        } catch (error) {
-            console.error('❌ Error al exportar gráfico:', error);
-            alert('Error al exportar el gráfico');
-        }
-    };
-
-    // Función para actualizar comparativa
-    window.actualizarComparativa = function() {
-        const producto = document.getElementById('comparativaProducto').value;
-        const fechaInicio = document.getElementById('comparativaFechaInicio').value;
-        const fechaFin = document.getElementById('comparativaFechaFin').value;
-        const tipoGrafico = document.getElementById('tipoGrafico').value;
-        
-        console.log('🔄 Actualizando comparativa con filtros...', { producto, fechaInicio, fechaFin, tipoGrafico });
-        
-        // Hacer petición AJAX para obtener datos actualizados con filtros
-        fetch('/api/comparativa-datos', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                producto: producto,
-                fecha_inicio: fechaInicio,
-                fecha_fin: fechaFin
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Error en la respuesta del servidor');
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('📊 Datos recibidos de la API:', data);
-            
-            const labels = data.labels.length > 0 ? data.labels : ['Sin datos'];
-            const produccion = data.produccion.length > 0 ? data.produccion : [0];
-            const ventas = data.ventas.length > 0 ? data.ventas : [0];
-            
-            // Configurar el gráfico según el tipo seleccionado
-            let newDataComparativa = [];
-            let newLayoutComparativa = {
-                title: 'Comparativa: Producción vs Ventas',
-                margin: { t: 40 }
-            };
-            
-            switch(tipoGrafico) {
-                case 'bar':
-                    newDataComparativa = [
-                        {
-                            x: labels,
-                            y: produccion,
-                            name: 'Producción',
-                            type: 'bar',
-                            marker: { color: '#4361ee' }
-                        },
-                        {
-                            x: labels,
-                            y: ventas,
-                            name: 'Ventas',
-                            type: 'bar',
-                            marker: { color: '#28a745' }
-                        }
-                    ];
-                    newLayoutComparativa.xaxis = { title: 'Producto' };
-                    newLayoutComparativa.yaxis = { title: 'Cantidad', rangemode: 'tozero' };
-                    newLayoutComparativa.barmode = 'group';
-                    break;
-                    
-                case 'line':
-                    newDataComparativa = [
-                        {
-                            x: labels,
-                            y: produccion,
-                            name: 'Producción',
-                            type: 'scatter',
-                            mode: 'lines+markers',
-                            line: { color: '#4361ee', width: 3 },
-                            marker: { color: '#4361ee', size: 8 }
-                        },
-                        {
-                            x: labels,
-                            y: ventas,
-                            name: 'Ventas',
-                            type: 'scatter',
-                            mode: 'lines+markers',
-                            line: { color: '#28a745', width: 3 },
-                            marker: { color: '#28a745', size: 8 }
-                        }
-                    ];
-                    newLayoutComparativa.xaxis = { title: 'Producto' };
-                    newLayoutComparativa.yaxis = { title: 'Cantidad', rangemode: 'tozero' };
-                    break;
-                    
-                case 'pie-produccion':
-                    newDataComparativa = [{
-                        labels: labels,
-                        values: produccion,
-                        type: 'pie',
-                        hole: .4,
-                        marker: { colors: ['#4361ee', '#3a0ca3', '#4cc9f0', '#4895ef', '#560bad'] },
-                        name: 'Producción'
-                    }];
-                    newLayoutComparativa.title = 'Distribución de Producción';
-                    newLayoutComparativa.showlegend = true;
-                    break;
-                    
-                case 'pie-ventas':
-                    newDataComparativa = [{
-                        labels: labels,
-                        values: ventas,
-                        type: 'pie',
-                        hole: .4,
-                        marker: { colors: ['#28a745', '#20c997', '#6f42c1', '#fd7e14', '#dc3545'] },
-                        name: 'Ventas'
-                    }];
-                    newLayoutComparativa.title = 'Distribución de Ventas';
-                    newLayoutComparativa.showlegend = true;
-                    break;
-                    
-                case 'scatter':
-                    newDataComparativa = [{
-                        x: produccion,
-                        y: ventas,
-                        mode: 'markers',
-                        type: 'scatter',
-                        text: labels,
-                        marker: {
-                            size: 12,
-                            color: '#ff6b6b',
-                            line: { width: 2, color: '#fff' }
-                        },
-                        name: 'Productos'
-                    }];
-                    newLayoutComparativa.title = 'Correlación: Producción vs Ventas';
-                    newLayoutComparativa.xaxis = { title: 'Producción', rangemode: 'tozero' };
-                    newLayoutComparativa.yaxis = { title: 'Ventas', rangemode: 'tozero' };
-                    break;
-                    
-                default:
-                    // Tipo barras por defecto
-                    newDataComparativa = [
-                        {
-                            x: labels,
-                            y: produccion,
-                            name: 'Producción',
-                            type: 'bar',
-                            marker: { color: '#4361ee' }
-                        },
-                        {
-                            x: labels,
-                            y: ventas,
-                            name: 'Ventas',
-                            type: 'bar',
-                            marker: { color: '#28a745' }
-                        }
-                    ];
-                    newLayoutComparativa.xaxis = { title: 'Producto' };
-                    newLayoutComparativa.yaxis = { title: 'Cantidad', rangemode: 'tozero' };
-                    newLayoutComparativa.barmode = 'group';
-                    break;
-            }
-            
-            // Renderizar el gráfico con los nuevos datos
-            try {
-                Plotly.newPlot('comparativaChart', newDataComparativa, newLayoutComparativa, {responsive: true});
-                console.log('✅ Comparativa actualizada con tipo:', tipoGrafico);
-                console.log('📊 Datos del gráfico:', { labels, produccion, ventas });
-            } catch (error) {
-                console.error('❌ Error al actualizar comparativa:', error);
-                alert('Error al actualizar la comparativa: ' + error.message);
-            }
-        })
-        .catch(error => {
-            console.error('❌ Error en petición API:', error);
-            alert('Error al obtener datos de la comparativa: ' + error.message);
-        });
+            const img = await Plotly.toImage(chartId, { format: 'png', width: 1200, height: 600 });
+            Object.assign(document.createElement('a'), { href: img, download: fileName + '.png' }).click();
+        } catch (e) { console.error(e); }
     };
 </script>
 {% endblock %}

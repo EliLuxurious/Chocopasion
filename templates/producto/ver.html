@@ -1,36 +1,120 @@
 {% extends "base.html" %}
-
-{% block title %}Productos - Chocopasión{% endblock %}
+{% block title %}Productos — Chocopasión{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="welcome-header">
-        <h1>Catálogo de Productos</h1>
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Catálogo de Productos</h1>
+        <p class="text-gray-500 mt-0.5">Catálogo de productos artesanales registrados en el sistema</p>
     </div>
+</div>
 
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Nombre</th>
-                            <th>Descripción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for producto in productos %}
-                        <tr>
-                            <td>{{ producto.codigo }}</td>
-                            <td>{{ producto.nombre }}</td>
-                            <td>{{ producto.descripcion }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<div class="bg-white rounded-2xl border border-chocolate-100 shadow-card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-chocolate-50 border-b border-chocolate-100">
+                    <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Código/ID</th>
+                    <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre</th>
+                    <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Descripción</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for producto in productos %}
+                <tr class="table-row">
+                    <td class="px-6 py-4 text-gray-400 font-mono text-xs">#{{ producto.codigo or producto.id_producto }}</td>
+                    <td class="px-6 py-4 font-medium text-gray-800">{{ producto.nombre }}</td>
+                    <td class="px-6 py-4 text-gray-500">{{ producto.descripcion or '—' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="px-6 py-16 text-center">
+                        <i class="fas fa-box text-gray-200 text-5xl mb-4 block"></i>
+                        <p class="text-gray-400 font-medium">No hay productos registrados</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if total_pages > 1 %}
+    <div class="flex items-center justify-between border-t border-chocolate-100 bg-chocolate-50/50 px-6 py-4">
+        <div class="flex flex-1 justify-between sm:hidden">
+            {% if page > 1 %}
+            <a href="{{ url_for('productos_index', page=page-1) }}" class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold border border-chocolate-200 text-chocolate-700 bg-white hover:bg-chocolate-50 transition-colors">
+                <i class="fas fa-chevron-left text-xs"></i> Anterior
+            </a>
+            {% else %}
+            <span class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold border border-chocolate-100 text-gray-400 bg-gray-50 cursor-not-allowed">
+                <i class="fas fa-chevron-left text-xs"></i> Anterior
+            </span>
+            {% endif %}
+
+            {% if page < total_pages %}
+            <a href="{{ url_for('productos_index', page=page+1) }}" class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold border border-chocolate-200 text-chocolate-700 bg-white hover:bg-chocolate-50 transition-colors">
+                Siguiente <i class="fas fa-chevron-right text-xs"></i>
+            </a>
+            {% else %}
+            <span class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold border border-chocolate-100 text-gray-400 bg-gray-50 cursor-not-allowed">
+                Siguiente <i class="fas fa-chevron-right text-xs"></i>
+            </span>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-chocolate-800">
+                    Página <span class="font-bold">{{ page }}</span> de <span class="font-bold">{{ total_pages }}</span>
+                </p>
+            </div>
+            <div>
+                <nav class="isolate inline-flex -space-x-px rounded-xl shadow-sm bg-white border border-chocolate-100 overflow-hidden" aria-label="Pagination">
+                    <!-- Anterior -->
+                    {% if page > 1 %}
+                    <a href="{{ url_for('productos_index', page=page-1) }}" class="relative inline-flex items-center px-3 py-2 text-chocolate-700 hover:bg-chocolate-50 transition-colors border-r border-chocolate-100">
+                        <span class="sr-only">Anterior</span>
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </a>
+                    {% else %}
+                    <span class="relative inline-flex items-center px-3 py-2 text-gray-300 bg-gray-50/50 cursor-not-allowed border-r border-chocolate-100">
+                        <span class="sr-only">Anterior</span>
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </span>
+                    {% endif %}
+
+                    <!-- Page Numbers -->
+                    {% for p in pages_range %}
+                        {% if p == '...' %}
+                        <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-400 bg-gray-50 border-r border-chocolate-100 last:border-r-0">
+                            ...
+                        </span>
+                        {% elif p == page %}
+                        <span aria-current="page" class="relative z-10 inline-flex items-center bg-chocolate-700 px-4 py-2 text-sm font-semibold text-white focus:z-20">
+                            {{ p }}
+                        </span>
+                        {% else %}
+                        <a href="{{ url_for('productos_index', page=p) }}" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-chocolate-700 hover:bg-chocolate-50 transition-colors border-r border-chocolate-100 last:border-r-0">
+                            {{ p }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Siguiente -->
+                    {% if page < total_pages %}
+                    <a href="{{ url_for('productos_index', page=page+1) }}" class="relative inline-flex items-center px-3 py-2 text-chocolate-700 hover:bg-chocolate-50 transition-colors border-l border-chocolate-100">
+                        <span class="sr-only">Siguiente</span>
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </a>
+                    {% else %}
+                    <span class="relative inline-flex items-center px-3 py-2 text-gray-300 bg-gray-50/50 cursor-not-allowed border-l border-chocolate-100">
+                        <span class="sr-only">Siguiente</span>
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </span>
+                    {% endif %}
+                </nav>
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %} 

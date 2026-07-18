@@ -1,21 +1,39 @@
 #!/usr/bin/env python3
 """
 Script para probar la conexión a la base de datos y verificar los datos de precios
+
+Conexión: usa variables de entorno del .env
+  - Docker:  host=127.0.0.1, port=3307, user=chocouser, password=chocopassword
+  - Laragon: host=127.0.0.1, port=3306, user=root, password=''
 """
 import mysql.connector
 from mysql.connector import Error
+import os
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+
+def _get_conn_params():
+    host = os.getenv('MYSQL_HOST', '127.0.0.1')
+    if host == 'db':          # nombre de servicio Docker → no resolvible desde el host
+        host = '127.0.0.1'
+    return {
+        'host':     host,
+        'port':     int(os.getenv('MYSQL_PORT', 3307)),
+        'user':     os.getenv('MYSQL_USER', 'chocouser'),
+        'password': os.getenv('MYSQL_PASSWORD', 'chocopassword'),
+        'database': os.getenv('MYSQL_DATABASE', 'chocopasion2'),
+        'charset':  'utf8mb4',
+    }
 
 def test_database_connection():
     """Probar conexión y mostrar datos de precios"""
+    params = _get_conn_params()
+    print(f"🔌 Conectando a {params['host']}:{params['port']} / {params['database']}...")
+    connection = None
     try:
         # Conectar a la base de datos chocopasion2
-        connection = mysql.connector.connect(
-            host='localhost',
-            user='root',
-            password='',
-            database='chocopasion2',
-            charset='utf8mb4'
-        )
+        connection = mysql.connector.connect(**params)
         
         if connection.is_connected():
             print("✅ Conexión exitosa a chocopasion2")
@@ -68,7 +86,7 @@ def test_database_connection():
         return False
         
     finally:
-        if connection.is_connected():
+        if connection and connection.is_connected():
             cursor.close()
             connection.close()
             print("\n🔐 Conexión cerrada")

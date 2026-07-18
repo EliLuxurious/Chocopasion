@@ -1,69 +1,87 @@
 {% extends "base.html" %}
-
-{% block title %}Ver Producción - Chocopasión{% endblock %}
+{% block title %}Detalle de Producción — Chocopasión{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="welcome-header">
-        <h1>Detalles de Producción</h1>
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Detalle de Producción</h1>
+        <p class="text-gray-500 mt-0.5">Registro #{{ produccion.id_produccion }}</p>
     </div>
+    <a href="{{ url_for('produccion_index') }}"
+       class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
+              text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors">
+        <i class="fas fa-arrow-left text-xs"></i> Volver
+    </a>
+</div>
 
-    <div class="card">
-        <div class="card-body">
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <h5 class="card-title">Información General</h5>
-                    <table class="table">
-                        <tr>
-                            <th>ID:</th>
-                            <td>{{ produccion.id_produccion }}</td>
-                        </tr>
-                        <tr>
-                            <th>Fecha:</th>
-                            <td>{{ produccion.fecha.strftime('%d/%m/%Y') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Producto:</th>
-                            <td>{{ produccion.producto }}</td>
-                        </tr>
-                        <tr>
-                            <th>Presentación:</th>
-                            <td>{{ produccion.presentacion }}</td>
-                        </tr>
-                        <tr>
-                            <th>Cantidad:</th>
-                            <td>{{ produccion.cantidad }}</td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="col-md-6">
-                    <h5 class="card-title">Responsables</h5>
-                    <ul class="list-group">
-                        {% for responsable in responsables %}
-                        <li class="list-group-item">
-                            {{ responsable.nombre }} {{ responsable.apellido }}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
+    <!-- Información general -->
+    <div class="bg-white rounded-2xl border border-chocolate-100 shadow-card">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+            <i class="fas fa-info-circle text-chocolate-500 text-sm"></i>
+            <h2 class="font-semibold text-gray-800 text-sm">Información General</h2>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">ID</span>
+                <span class="font-mono text-sm text-gray-600">#{{ produccion.id_produccion }}</span>
             </div>
-
-            <div class="d-flex justify-content-between">
-                <a href="{{ url_for('produccion_index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver
-                </a>
-                <div>
-                    <a href="{{ url_for('produccion_editar', id=produccion.id_produccion) }}" class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
-                    <a href="{{ url_for('produccion_eliminar', id=produccion.id_produccion) }}" 
-                       class="btn btn-danger"
-                       onclick="return confirm('¿Está seguro de que desea eliminar esta producción?')">
-                        <i class="fas fa-trash"></i> Eliminar
-                    </a>
-                </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Fecha</span>
+                <span class="text-sm font-medium text-gray-800">{{ produccion.fecha.strftime('%d/%m/%Y') }}</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Producto</span>
+                <span class="text-sm font-medium text-gray-800">{{ produccion.producto }}</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Presentación</span>
+                <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">{{ produccion.presentacion }}</span>
+            </div>
+            <div class="flex justify-between items-center py-2">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cantidad</span>
+                <span class="text-xl font-bold text-chocolate-700">{{ produccion.cantidad }}</span>
             </div>
         </div>
     </div>
+
+    <!-- Responsables -->
+    <div class="bg-white rounded-2xl border border-chocolate-100 shadow-card">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+            <i class="fas fa-users text-chocolate-500 text-sm"></i>
+            <h2 class="font-semibold text-gray-800 text-sm">Responsables</h2>
+        </div>
+        <div class="p-6">
+            {% if responsables %}
+            <ul class="space-y-3">
+                {% for responsable in responsables %}
+                <li class="flex items-center gap-3 p-3 rounded-xl bg-chocolate-50">
+                    <div class="w-8 h-8 rounded-full bg-chocolate-200 flex items-center justify-center shrink-0">
+                        <span class="text-chocolate-700 text-xs font-bold">{{ responsable.nombre[0] }}</span>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">{{ responsable.nombre }} {{ responsable.apellido }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-gray-400 text-sm text-center py-4">Sin responsables asignados</p>
+            {% endif %}
+        </div>
+    </div>
 </div>
-{% endblock %} 
+
+<!-- Acciones -->
+<div class="flex gap-3 mt-6">
+    <a href="{{ url_for('produccion_editar', id=produccion.id_produccion) }}"
+       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold
+              text-white bg-chocolate-700 hover:bg-chocolate-800 transition-colors shadow-lg shadow-chocolate-900/20">
+        <i class="fas fa-edit"></i> Editar
+    </a>
+    <a href="{{ url_for('produccion_eliminar', id=produccion.id_produccion) }}"
+       onclick="return confirm('¿Está seguro de que desea eliminar esta producción?')"
+       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold
+              text-white bg-red-500 hover:bg-red-600 transition-colors">
+        <i class="fas fa-trash"></i> Eliminar
+    </a>
+</div>
+{% endblock %}

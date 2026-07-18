@@ -1,52 +1,55 @@
-<!-- filepath: c:\SI\Chocopasion\templates\producto\agregar.html -->
 {% extends "base.html" %}
-
-{% block title %}Agregar Producto - Chocopasión{% endblock %}
+{% block title %}Agregar Producto — Chocopasión{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-2">Agregar Producto</h1>
-                    <p class="text-muted">Complete el formulario para agregar un nuevo producto</p>
-                </div>
-                <a href="{{ url_for('productos_index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Volver
-                </a>
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Agregar Producto</h1>
+        <p class="text-gray-500 mt-0.5">Complete el formulario para agregar un nuevo producto</p>
+    </div>
+    <a href="{{ url_for('productos_index') }}"
+       class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
+              text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors">
+        <i class="fas fa-arrow-left text-xs"></i> Volver
+    </a>
+</div>
+
+<div class="bg-white rounded-2xl border border-chocolate-100 shadow-card max-w-2xl">
+    <div class="px-6 py-4 border-b border-gray-100">
+        <h2 class="font-semibold text-gray-800 text-sm flex items-center gap-2">
+            <i class="fas fa-box text-chocolate-500"></i> Datos del Producto
+        </h2>
+    </div>
+    <form action="{{ url_for('productos_agregar') }}" method="POST" class="p-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+                <label for="nombre" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Nombre <span class="text-red-400">*</span>
+                </label>
+                <input type="text" id="nombre" name="nombre" required placeholder="Chocolate negro 70%"
+                       class="w-full px-3 py-2.5 bg-chocolate-50 border border-gray-200 rounded-xl text-sm text-gray-800
+                              focus:outline-none focus:ring-2 focus:ring-chocolate-400 focus:border-transparent transition-all">
+            </div>
+            <div>
+                <label for="codigo" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Código</label>
+                <input type="text" id="codigo" name="codigo" placeholder="CHO-001"
+                       class="w-full px-3 py-2.5 bg-chocolate-50 border border-gray-200 rounded-xl text-sm text-gray-800
+                              focus:outline-none focus:ring-2 focus:ring-chocolate-400 focus:border-transparent transition-all">
+            </div>
+            <div class="sm:col-span-2">
+                <label for="descripcion" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Descripción</label>
+                <textarea id="descripcion" name="descripcion" rows="4" placeholder="Descripción detallada del producto..."
+                          class="w-full px-3 py-2.5 bg-chocolate-50 border border-gray-200 rounded-xl text-sm text-gray-800
+                                 focus:outline-none focus:ring-2 focus:ring-chocolate-400 focus:border-transparent transition-all resize-none"></textarea>
             </div>
         </div>
-    </div>
-
-    <div class="card border-0 shadow-sm">
-        <div class="card-body">
-            <form action="{{ url_for('productos_agregar') }}" method="POST">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="nombre" class="form-label">Nombre del Producto</label>
-                            <input type="text" class="form-control" id="nombre" name="nombre" required>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="codigo" class="form-label">Código</label>
-                            <input type="text" class="form-control" id="codigo" name="codigo">
-                        </div>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label for="descripcion" class="form-label">Descripción</label>
-                    <textarea class="form-control" id="descripcion" name="descripcion" rows="4"></textarea>
-                </div>
-                <div class="text-end">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>Guardar Producto
-                    </button>
-                </div>
-            </form>
+        <div class="flex justify-end mt-6 pt-5 border-t border-gray-100">
+            <button type="submit"
+                    class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-chocolate-700 hover:bg-chocolate-800
+                           transition-colors flex items-center gap-2 shadow-lg shadow-chocolate-900/20">
+                <i class="fas fa-save"></i> Guardar Producto
+            </button>
         </div>
-    </div>
+    </form>
 </div>
 {% endblock %}

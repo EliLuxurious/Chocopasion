@@ -1,247 +1,305 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Chocopasión — Sistema de gestión de producción y precios de chocolates artesanales">
     <title>{% block title %}Chocopasión{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN Play con configuración personalizada -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        chocolate: {
+                            50:  '#FAF8F5',
+                            100: '#F5EBE0',
+                            200: '#EAD5C3',
+                            300: '#C5A38B',
+                            400: '#A3704C',
+                            500: '#8E5A3C',
+                            600: '#7A4C32',
+                            700: '#6E432A',
+                            800: '#4E2F1C',
+                            900: '#2D1A12',
+                        },
+                        gold: {
+                            300: '#E6C587',
+                            400: '#D4A843',
+                            500: '#B8901E',
+                        },
+                        cream: {
+                            50:  '#FAF8F5',
+                            100: '#F5EBE0',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px rgba(0,0,0,0.12)',
+                        'card':  '0 2px 16px rgba(42,20,10,0.08)',
+                        'card-hover': '0 8px 32px rgba(42,20,10,0.15)',
+                    },
+                    keyframes: {
+                        'slide-in': {
+                            '0%': { opacity: '0', transform: 'translateY(-8px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        'fade-in': {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        }
+                    },
+                    animation: {
+                        'slide-in': 'slide-in 0.25s ease-out',
+                        'fade-in': 'fade-in 0.4s ease-out',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome 6 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Estilos Premium -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+
     <style>
-        :root {
-            --sidebar-width: 280px;
-            --sidebar-bg: #634e43;
-            --sidebar-hover: #4f3d35;
-            --primary-color: #4361ee;
+        /* Transición suave del sidebar en mobile */
+        #sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Línea activa del sidebar */
+        .nav-active {
+            background: linear-gradient(90deg, rgba(212,168,67,0.18) 0%, rgba(212,168,67,0.04) 100%);
+            border-left: 4px solid #d4a843;
+            box-shadow: 0 4px 15px rgba(212, 168, 67, 0.1);
         }
 
-        body {
-            min-height: 100vh;
-            background-color: #f8f9fa;
+        /* Hover suave en nav links */
+        .nav-link-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .nav-link-hover:hover {
+            background: rgba(255,255,255,0.08);
+            transform: translateX(4px);
+            color: white !important;
         }
 
-        .sidebar {
-            width: var(--sidebar-width);
-            background-color: var(--sidebar-bg);
-            min-height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            z-index: 1000;
-            transition: all 0.3s ease;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
+        /* Overlay mobile */
+        #sidebar-overlay { transition: opacity 0.3s ease; }
+
+        /* Tabla zebra sutil */
+        .table-row:nth-child(even) { background-color: rgba(253, 248, 245, 0.6); }
+        .table-row {
+            transition: all 0.2s ease-in-out;
         }
-
-        .sidebar-header {
-            padding: 2rem 1.5rem;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .sidebar-header h1 {
-            color: #ffffff;
-            font-size: 1.8rem;
-            margin: 0;
-            font-weight: 600;
-        }
-
-        .nav-container {
-            padding: 2rem 0;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
-            padding: 1rem 2rem;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            transition: all 0.3s ease;
-            border-left: 4px solid transparent;
-            margin: 0.5rem 0;
-        }
-
-        .sidebar .nav-link:hover {
-            background-color: var(--sidebar-hover);
-            color: #ffffff;
-            border-left-color: var(--primary-color);
-            transform: translateX(5px);
-        }
-
-        .sidebar .nav-link.active {
-            background-color: var(--sidebar-hover);
-            color: #ffffff;
-            border-left-color: var(--primary-color);
-            font-weight: 500;
-        }
-
-        .sidebar .nav-link i {
-            margin-right: 1rem;
-            width: 24px;
-            text-align: center;
-            font-size: 1.2rem;
-        }
-
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 2rem;
-            min-height: 100vh;
-            transition: all 0.3s ease;
-        }
-
-        .logout-link {
-            padding: 1.5rem;
-            color: rgba(255,255,255,0.8);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            transition: all 0.3s ease;
-            font-size: 1.1rem;
-        }
-
-        .logout-link:hover {
-            background-color: var(--sidebar-hover);
-            color: #ffffff;
-        }
-
-        .logout-link i {
-            margin-right: 0.8rem;
-            font-size: 1.2rem;
-        }
-
-        .card {
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            transition: transform 0.2s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-        }
-
-        .btn {
-            border-radius: 8px;
-            padding: 0.5rem 1rem;
-            font-weight: 500;
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
-        .alert {
-            border-radius: 10px;
-            border: none;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-
-            .sidebar.show {
-                transform: translateX(0);
-            }
-
-            .main-content {
-                margin-left: 0;
-            }
-
-            .navbar-toggler {
-                display: block;
-            }
+        .table-row:hover {
+            background-color: rgba(245, 230, 220, 0.5) !important;
+            transform: translateX(2px);
+            box-shadow: 0 4px 12px rgba(42, 20, 10, 0.03);
         }
     </style>
+
     {% block extra_css %}{% endblock %}
 </head>
-<body>
-    {% if session.get('usuario_id') %}
-    <nav class="navbar navbar-expand-lg navbar-dark d-lg-none" style="background-color: var(--sidebar-bg);">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">Chocopasión</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+<body class="h-full font-sans bg-cream-50 text-gray-800 antialiased">
+
+{% if session.get('usuario_id') %}
+
+<!-- ── Overlay mobile ─────────────────────────────────────────────────────── -->
+<div id="sidebar-overlay"
+     class="fixed inset-0 bg-black/50 z-30 opacity-0 pointer-events-none lg:hidden"
+     onclick="closeSidebar()">
+</div>
+
+<!-- ── Sidebar ────────────────────────────────────────────────────────────── -->
+<aside id="sidebar"
+       class="fixed top-0 left-0 h-full w-64 z-40 flex flex-col
+              bg-white/70 backdrop-blur-xl border-r border-chocolate-100/60
+              shadow-lg -translate-x-full lg:translate-x-0 glass-sidebar">
+
+    <!-- Logo / Brand -->
+    <div class="flex items-center gap-3 px-6 py-6 border-b border-chocolate-100/60">
+        <div class="w-10 h-10 rounded-xl bg-gold-400/20 flex items-center justify-center text-xl shrink-0 border border-white">
+            🍫
         </div>
+        <div>
+            <h1 class="text-chocolate-800 font-bold text-lg leading-tight">Chocopasión</h1>
+            <p class="text-chocolate-500 text-[10px] font-bold uppercase tracking-widest">Sistema de Gestión</p>
+        </div>
+    </div>
+
+    <!-- Usuario actual -->
+    <div class="px-6 py-4 border-b border-chocolate-100/60 bg-chocolate-50/20">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-gold-400 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                {{ session.get('nombre', 'U')[0] | upper }}
+            </div>
+            <div class="overflow-hidden">
+                <p class="text-chocolate-800 text-sm font-bold truncate">{{ session.get('nombre', 'Usuario') }}</p>
+                <p class="text-chocolate-500 text-xs font-semibold capitalize">{{ session.get('rol', '') }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegación -->
+    <nav class="flex-1 overflow-y-auto py-4 px-3">
+        <p class="text-chocolate-500 text-[10px] font-bold uppercase tracking-widest px-3 mb-3">Menú Principal</p>
+        <ul class="space-y-1">
+
+            {% if session.get('rol') == 'administrador' %}
+            <li>
+                <a href="{{ url_for('dashboard') }}"
+                   class="nav-link-hover flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200
+                          {% if request.endpoint == 'dashboard' %}nav-active text-chocolate-900 font-bold{% else %}text-chocolate-700 hover:text-chocolate-950{% endif %}">
+                    <i class="fas fa-chart-line w-4 text-center {% if request.endpoint == 'dashboard' %}text-gold-500{% else %}text-chocolate-400{% endif %}"></i>
+                    Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('usuarios_index') }}"
+                   class="nav-link-hover flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200
+                          {% if request.endpoint == 'usuarios_index' %}nav-active text-chocolate-900 font-bold{% else %}text-chocolate-700 hover:text-chocolate-950{% endif %}">
+                    <i class="fas fa-users w-4 text-center {% if request.endpoint == 'usuarios_index' %}text-gold-500{% else %}text-chocolate-400{% endif %}"></i>
+                    Usuarios
+                </a>
+            </li>
+            {% endif %}
+
+            <li>
+                <a href="{{ url_for('produccion_index') }}"
+                   class="nav-link-hover flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200
+                          {% if request.endpoint == 'produccion_index' %}nav-active text-chocolate-900 font-bold{% else %}text-chocolate-700 hover:text-chocolate-950{% endif %}">
+                    <i class="fas fa-industry w-4 text-center {% if request.endpoint == 'produccion_index' %}text-gold-500{% else %}text-chocolate-400{% endif %}"></i>
+                    Producción
+                </a>
+            </li>
+
+            <li>
+                <a href="{{ url_for('productos_index') }}"
+                   class="nav-link-hover flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200
+                          {% if request.endpoint == 'productos_index' %}nav-active text-chocolate-900 font-bold{% else %}text-chocolate-700 hover:text-chocolate-950{% endif %}">
+                    <i class="fas fa-box w-4 text-center {% if request.endpoint == 'productos_index' %}text-gold-500{% else %}text-chocolate-400{% endif %}"></i>
+                    Productos
+                </a>
+            </li>
+
+            <li>
+                <a href="{{ url_for('precios.index') }}"
+                   class="nav-link-hover flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200
+                          {% if request.endpoint and request.endpoint.startswith('precios.') %}nav-active text-chocolate-900 font-bold{% else %}text-chocolate-700 hover:text-chocolate-950{% endif %}">
+                    <i class="fas fa-dollar-sign w-4 text-center {% if request.endpoint and request.endpoint.startswith('precios.') %}text-gold-500{% else %}text-chocolate-400{% endif %}"></i>
+                    Precios
+                </a>
+            </li>
+
+        </ul>
     </nav>
 
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h1>Chocopasión</h1>
-        </div>
-        <div class="nav-container">
-            <ul class="nav flex-column">
-                {% if session.get('rol') == 'administrador' %}
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
-                            <i class="fas fa-chart-line"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'usuarios_index' %}active{% endif %}" href="{{ url_for('usuarios_index') }}">
-                            <i class="fas fa-users"></i> Usuarios
-                        </a>
-                    </li>
-                {% endif %}
-
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'produccion_index' %}active{% endif %}" href="{{ url_for('produccion_index') }}">
-                        <i class="fas fa-industry"></i> Producción
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'productos_index' %}active{% endif %}" href="{{ url_for('productos_index') }}">
-                        <i class="fas fa-box"></i> Productos
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('precios.') %}active{% endif %}" href="{{ url_for('precios.index') }}">
-                        <i class="fas fa-dollar-sign"></i> Precios
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('ventas.') %}active{% endif %}" href="{{ url_for('ventas.index') }}">
-                        <i class="fas fa-shopping-cart"></i> Ventas
-                    </a>
-                </li>
-            </ul>
-        </div>
-        <a href="{{ url_for('logout') }}" class="logout-link">
-            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+    <!-- Cerrar sesión -->
+    <div class="p-3 border-t border-chocolate-100/60 bg-chocolate-50/10">
+        <a href="{{ url_for('logout') }}"
+           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-chocolate-600 hover:text-red-600 hover:bg-red-50/50
+                  text-sm font-medium transition-all duration-200 group">
+            <i class="fas fa-sign-out-alt w-4 text-center text-chocolate-400 group-hover:text-red-500 transition-colors"></i>
+            Cerrar Sesión
         </a>
     </div>
-    {% endif %}
+</aside>
 
-    <div class="main-content">
+<!-- ── Topbar mobile ──────────────────────────────────────────────────────── -->
+<header class="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-3
+               bg-white/90 backdrop-blur-md border-b border-chocolate-100/80 shadow-sm">
+    <button id="menu-btn" onclick="openSidebar()"
+            class="w-9 h-9 flex items-center justify-center rounded-xl bg-chocolate-50 text-chocolate-700 hover:bg-chocolate-100 transition-colors border border-chocolate-100">
+        <i class="fas fa-bars"></i>
+    </button>
+    <span class="text-chocolate-800 font-extrabold text-base">🍫 Chocopasión</span>
+    <div class="w-9 h-9"></div>
+</header>
+
+<!-- ── Contenido principal ────────────────────────────────────────────────── -->
+<main class="lg:ml-64 min-h-screen pt-16 lg:pt-0">
+    <div class="p-4 sm:p-6 lg:p-8 animate-fade-in">
+
+        <!-- Flash messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
+                <div class="mb-6 space-y-3">
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    {% if category == 'success' %}
+                    <div class="animate-slide-in flex items-start gap-3 px-4 py-3 rounded-xl
+                                bg-emerald-50 border border-emerald-200 text-emerald-800">
+                        <i class="fas fa-check-circle mt-0.5 text-emerald-500 shrink-0"></i>
+                        <span class="text-sm font-medium">{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="ml-auto text-emerald-400 hover:text-emerald-600">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
                     </div>
+                    {% elif category == 'danger' or category == 'error' %}
+                    <div class="animate-slide-in flex items-start gap-3 px-4 py-3 rounded-xl
+                                bg-red-50 border border-red-200 text-red-800">
+                        <i class="fas fa-exclamation-circle mt-0.5 text-red-500 shrink-0"></i>
+                        <span class="text-sm font-medium">{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="ml-auto text-red-400 hover:text-red-600">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                    {% elif category == 'warning' %}
+                    <div class="animate-slide-in flex items-start gap-3 px-4 py-3 rounded-xl
+                                bg-amber-50 border border-amber-200 text-amber-800">
+                        <i class="fas fa-triangle-exclamation mt-0.5 text-amber-500 shrink-0"></i>
+                        <span class="text-sm font-medium">{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="ml-auto text-amber-400 hover:text-amber-600">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                    {% else %}
+                    <div class="animate-slide-in flex items-start gap-3 px-4 py-3 rounded-xl
+                                bg-blue-50 border border-blue-200 text-blue-800">
+                        <i class="fas fa-info-circle mt-0.5 text-blue-500 shrink-0"></i>
+                        <span class="text-sm font-medium">{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="ml-auto text-blue-400 hover:text-blue-600">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                    {% endif %}
                 {% endfor %}
+                </div>
             {% endif %}
         {% endwith %}
 
         {% block content %}{% endblock %}
     </div>
+</main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Toggle sidebar on mobile
-        document.querySelector('.navbar-toggler').addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.toggle('show');
-        });
-    </script>
-    {% block extra_js %}{% endblock %}
+<script>
+    function openSidebar() {
+        document.getElementById('sidebar').classList.remove('-translate-x-full');
+        const overlay = document.getElementById('sidebar-overlay');
+        overlay.classList.remove('opacity-0', 'pointer-events-none');
+        overlay.classList.add('opacity-100');
+    }
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.add('-translate-x-full');
+        const overlay = document.getElementById('sidebar-overlay');
+        overlay.classList.add('opacity-0', 'pointer-events-none');
+        overlay.classList.remove('opacity-100');
+    }
+</script>
+
+{% else %}
+    {% block content_no_login %}{% endblock %}
+{% endif %}
+
+{% block extra_js %}{% endblock %}
 </body>
 </html>

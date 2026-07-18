@@ -1,182 +1,307 @@
-<!-- filepath: c:\XD\Chocopasion\templates\produccion\agregar.html -->
 {% extends "base.html" %}
-
-{% block title %}Agregar Producción - Chocopasión{% endblock %}
+{% block title %}Nuevo Registro — Producción{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-2">Nuevo Registro de Producción</h1>
-                    <p class="text-muted">Complete el formulario para registrar una nueva producción</p>
-                </div>
-                <a href="{{ url_for('produccion_index') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Volver
-                </a>
-            </div>
-        </div>
+<!-- Header -->
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Nuevo Registro de Producción</h1>
+        <p class="text-gray-500 mt-0.5">Permite registrar uno o más productos producidos por el equipo hoy</p>
     </div>
-
-    <div class="row">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <form action="{{ url_for('produccion_agregar') }}" method="POST">
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <div class="form-floating mb-3">
-                                    <input type="date" class="form-control" id="fecha" name="fecha" value="{{ fecha_actual }}" required>
-                                    <label for="fecha">Fecha de Producción</label>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="form-floating mb-3">
-                                    <select class="form-select" id="producto" name="producto" required>
-                                        <option value="">Seleccione un producto</option>
-                                        {% for producto in productos %}
-                                        <option value="{{ producto.id_producto }}">{{ producto.nombre }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <label for="producto">Producto</label>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="form-floating mb-3">
-                                    <select class="form-select" id="presentacion" name="presentacion" required>
-                                        <option value="">Seleccione una presentación</option>
-                                        {% for presentacion in presentaciones %}
-                                        <option value="{{ presentacion.id_presentacion }}">{{ presentacion.descripcion }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <label for="presentacion">Presentación</label>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="form-floating mb-3">
-                                    <input type="number" class="form-control" id="cantidad" name="cantidad" required min="1">
-                                    <label for="cantidad">Cantidad</label>
-                                </div>
-                            </div>
-
-                            <div class="col-12">
-                                <div class="card border-0 bg-light">
-                                    <div class="card-body">
-                                        <h5 class="card-title mb-3">Responsables</h5>
-                                        <div id="responsables-container">
-                                            <!-- Primer campo de responsable -->
-                                            <div class="row g-3 mb-3 responsable-field">
-                                                <div class="col-md-11">
-                                                    <div class="form-floating">
-                                                        <select class="form-select responsable-select" name="responsables[]" required>
-                                                            <option value="">Seleccione un responsable</option>
-                                                            {% for responsable in responsables %}
-                                                            <option value="{{ responsable.id_responsable }}">{{ responsable.nombre }} {{ responsable.apellido }}</option>
-                                                            {% endfor %}
-                                                        </select>
-                                                        <label>Responsable</label>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-1 d-flex align-items-center">
-                                                    <button type="button" class="btn btn-danger remove-responsable" style="display: none;">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button type="button" class="btn btn-outline-primary" id="agregar-responsable">
-                                            <i class="fas fa-plus me-2"></i>Agregar Responsable
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-12">
-                                <hr class="my-4">
-                                <div class="d-flex justify-content-end gap-2">
-                                    <a href="{{ url_for('produccion_index') }}" class="btn btn-light">Cancelar</a>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save me-2"></i>Guardar Producción
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+    <a href="{{ url_for('produccion_index') }}"
+       class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
+              text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors">
+        <i class="fas fa-arrow-left text-xs"></i> Volver
+    </a>
 </div>
-{% endblock %}
 
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('responsables-container');
-    const addButton = document.getElementById('agregar-responsable');
-    
-    // Función para crear un nuevo campo de responsable
-    function createResponsableField() {
-        const div = document.createElement('div');
-        div.className = 'row g-3 mb-3 responsable-field';
-        div.innerHTML = `
-            <div class="col-md-11">
-                <div class="form-floating">
-                    <select class="form-select responsable-select" name="responsables[]" required>
+<!-- Formulario -->
+<div class="bg-white rounded-2xl border border-chocolate-100 shadow-card max-w-4xl">
+    <div class="px-6 py-4 border-b border-gray-100">
+        <h2 class="font-semibold text-gray-800 text-sm flex items-center gap-2">
+            <i class="fas fa-industry text-chocolate-500"></i> Formulario de Producción Colectiva
+        </h2>
+    </div>
+    <form action="{{ url_for('produccion_agregar') }}" method="POST" class="p-6">
+        
+        <!-- Fecha de Producción -->
+        <div class="mb-6 max-w-xs">
+            <label for="fecha" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                Fecha de Producción <span class="text-red-400">*</span>
+            </label>
+            <input type="date" id="fecha" name="fecha" value="{{ fecha_actual }}" required
+                   class="w-full px-3 py-2.5 bg-chocolate-50 border border-gray-200 rounded-xl text-sm text-gray-800
+                          focus:outline-none focus:ring-2 focus:ring-chocolate-400 focus:border-transparent transition-all">
+        </div>
+
+        <!-- Responsables del Lote -->
+        <div class="mt-6 p-5 bg-chocolate-50 rounded-xl border border-chocolate-100 mb-6">
+            <h3 class="font-semibold text-gray-700 text-sm mb-1 flex items-center gap-2">
+                <i class="fas fa-users text-chocolate-500 text-xs"></i> Equipo de Trabajo (Responsables)
+            </h3>
+            <p class="text-xs text-gray-400 mb-4">Selecciona los operarios que participaron en este lote de producción</p>
+            
+            <div id="responsables-container" class="space-y-3">
+                <div class="flex gap-3 responsable-field">
+                    <select class="flex-1 px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-800
+                                  focus:outline-none focus:ring-2 focus:ring-chocolate-400 transition-all responsable-select"
+                            name="responsables[]" required>
                         <option value="">Seleccione un responsable</option>
                         {% for responsable in responsables %}
                         <option value="{{ responsable.id_responsable }}">{{ responsable.nombre }} {{ responsable.apellido }}</option>
                         {% endfor %}
                     </select>
-                    <label>Responsable</label>
+                    <button type="button"
+                            class="remove-responsable w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-100
+                                   transition-colors hidden shrink-0 flex items-center justify-center">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
                 </div>
             </div>
-            <div class="col-md-1 d-flex align-items-center">
-                <button type="button" class="btn btn-danger remove-responsable">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `;
-        return div;
-    }
+            <button type="button" id="agregar-responsable"
+                    class="mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold
+                           text-chocolate-600 hover:text-chocolate-800 bg-white border border-chocolate-200
+                           hover:border-chocolate-400 rounded-xl transition-all">
+                <i class="fas fa-plus text-xs"></i> Agregar Integrante
+            </button>
+        </div>
 
-    // Actualizar visibilidad de botones de eliminar
-    function updateRemoveButtons() {
-        const fields = container.querySelectorAll('.responsable-field');
-        fields.forEach((field) => {
-            const removeButton = field.querySelector('.remove-responsable');
-            if (fields.length > 1) {
-                removeButton.style.display = 'block';
-            } else {
-                removeButton.style.display = 'none';
-            }
+        <!-- Detalle de Productos Producidos -->
+        <div class="p-5 bg-white rounded-xl border border-gray-200 mb-6 shadow-inner">
+            <h3 class="font-semibold text-gray-800 text-sm mb-1 flex items-center gap-2">
+                <i class="fas fa-boxes text-chocolate-500"></i> Detalle de Producción
+            </h3>
+            <p class="text-xs text-gray-400 mb-4">Registra los productos y cantidades terminadas en este lote. Se guardarán como registros independientes en la BD.</p>
+            
+            <div id="productos-container" class="space-y-4">
+                <!-- Fila inicial de producto -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end producto-row pb-4 border-b border-gray-100 sm:border-0 sm:pb-0">
+                    <div class="sm:col-span-5">
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 sm:hidden">Producto</label>
+                        <label class="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Producto <span class="text-red-400">*</span></label>
+                        <select class="w-full px-3 py-2.5 bg-chocolate-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-chocolate-400 transition-all" name="productos[]" required>
+                            <option value="">Seleccione un producto</option>
+                            {% for producto in productos %}
+                            <option value="{{ producto.id_producto }}">{{ producto.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="sm:col-span-4">
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 sm:hidden">Presentación</label>
+                        <label class="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Presentación <span class="text-red-400">*</span></label>
+                        <select class="w-full px-3 py-2.5 bg-chocolate-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-chocolate-400 transition-all" name="presentaciones[]" required>
+                            <option value="">Seleccione una presentación</option>
+                            {% for presentacion in presentaciones %}
+                            <option value="{{ presentacion.id_presentacion }}">{{ presentacion.descripcion }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 sm:hidden">Cantidad</label>
+                        <label class="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Cantidad <span class="text-red-400">*</span></label>
+                        <input type="number" name="cantidades[]" required min="1" placeholder="0"
+                               class="w-full px-3 py-2.5 bg-chocolate-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-chocolate-400 transition-all">
+                    </div>
+                    <div class="sm:col-span-1 flex justify-center pb-0.5">
+                        <button type="button"
+                                class="remove-producto w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-100
+                                       transition-colors shrink-0 flex items-center justify-center hidden">
+                            <i class="fas fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" id="agregar-producto"
+                    class="mt-4 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold
+                           text-chocolate-700 hover:text-white bg-chocolate-100 hover:bg-chocolate-700 rounded-xl transition-all">
+                <i class="fas fa-plus text-xs"></i> Agregar Otro Producto
+            </button>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end gap-3 mt-6 pt-5 border-t border-gray-100">
+            <a href="{{ url_for('produccion_index') }}"
+               class="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600
+                      bg-gray-100 hover:bg-gray-200 transition-colors">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white
+                           bg-chocolate-700 hover:bg-chocolate-800 transition-colors
+                           flex items-center gap-2 shadow-lg shadow-chocolate-900/20">
+                <i class="fas fa-save"></i> Guardar Todo el Lote
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const respContainer = document.getElementById('responsables-container');
+    const addRespButton = document.getElementById('agregar-responsable');
+
+    const prodContainer = document.getElementById('productos-container');
+    const addProdButton = document.getElementById('agregar-producto');
+
+    // ── 1. GESTIÓN DE RESPONSABLES (SIN DUPLICADOS) ───────────────────────────
+    function updateDisabledResponsibles() {
+        const selects = Array.from(respContainer.querySelectorAll('.responsable-select'));
+        const selectedValues = selects.map(s => s.value).filter(val => val !== "");
+
+        selects.forEach(select => {
+            const currentValue = select.value;
+            Array.from(select.options).forEach(option => {
+                if (option.value === "") return;
+                const isSelectedElsewhere = selectedValues.includes(option.value) && option.value !== currentValue;
+                option.disabled = isSelectedElsewhere;
+            });
         });
     }
 
-    // Agregar nuevo responsable
-    addButton.addEventListener('click', function() {
-        container.appendChild(createResponsableField());
-        updateRemoveButtons();
+    function createResponsableField() {
+        const div = document.createElement('div');
+        div.className = 'flex gap-3 responsable-field animate-slide-in';
+        div.innerHTML = `
+            <select class="flex-1 px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-800
+                           focus:outline-none focus:ring-2 focus:ring-chocolate-400 transition-all responsable-select"
+                    name="responsables[]" required>
+                <option value="">Seleccione un responsable</option>
+                {% for responsable in responsables %}
+                <option value="{{ responsable.id_responsable }}">{{ responsable.nombre }} {{ responsable.apellido }}</option>
+                {% endfor %}
+            </select>
+            <button type="button"
+                    class="remove-responsable w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-100
+                           transition-colors shrink-0 flex items-center justify-center">
+                <i class="fas fa-times text-xs"></i>
+            </button>`;
+        
+        div.querySelector('.responsable-select').addEventListener('change', updateDisabledResponsibles);
+        return div;
+    }
+
+    function updateRemoveResponsiblesButtons() {
+        const fields = respContainer.querySelectorAll('.responsable-field');
+        fields.forEach(field => {
+            field.querySelector('.remove-responsable').classList.toggle('hidden', fields.length <= 1);
+        });
+    }
+
+    addRespButton.addEventListener('click', () => {
+        respContainer.appendChild(createResponsableField());
+        updateRemoveResponsiblesButtons();
+        updateDisabledResponsibles();
     });
 
-    // Eliminar responsable
-    container.addEventListener('click', function(e) {
+    respContainer.addEventListener('click', e => {
         if (e.target.closest('.remove-responsable')) {
-            const field = e.target.closest('.responsable-field');
-            const fields = container.querySelectorAll('.responsable-field');
+            const fields = respContainer.querySelectorAll('.responsable-field');
             if (fields.length > 1) {
-                field.remove();
-                updateRemoveButtons();
+                e.target.closest('.responsable-field').remove();
+                updateRemoveResponsiblesButtons();
+                updateDisabledResponsibles();
             }
         }
     });
 
-    // Inicializar estado de botones
-    updateRemoveButtons();
+    respContainer.querySelectorAll('.responsable-select').forEach(select => {
+        select.addEventListener('change', updateDisabledResponsibles);
+    });
+
+    // ── 2. GESTIÓN MULTI-PRODUCTOS ─────────────────────────────────────────────
+    function createProductoRow() {
+        const div = document.createElement('div');
+        div.className = 'grid grid-cols-1 sm:grid-cols-12 gap-3 items-end producto-row pb-4 border-b border-gray-100 sm:border-0 sm:pb-0 animate-slide-in mt-3';
+        div.innerHTML = `
+            <div class="sm:col-span-5">
+                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 sm:hidden">Producto</label>
+                <select class="w-full px-3 py-2.5 bg-chocolate-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-chocolate-400 transition-all" name="productos[]" required>
+                    <option value="">Seleccione un producto</option>
+                    {% for producto in productos %}
+                    <option value="{{ producto.id_producto }}">{{ producto.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="sm:col-span-4">
+                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 sm:hidden">Presentación</label>
+                <select class="w-full px-3 py-2.5 bg-chocolate-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-chocolate-400 transition-all" name="presentaciones[]" required>
+                    <option value="">Seleccione una presentación</option>
+                    {% for presentacion in presentaciones %}
+                    <option value="{{ presentacion.id_presentacion }}">{{ presentacion.descripcion }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="sm:col-span-2">
+                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 sm:hidden">Cantidad</label>
+                <input type="number" name="cantidades[]" required min="1" placeholder="0"
+                       class="w-full px-3 py-2.5 bg-chocolate-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-chocolate-400 transition-all">
+            </div>
+            <div class="sm:col-span-1 flex justify-center pb-0.5">
+                <button type="button"
+                        class="remove-producto w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-100
+                               transition-colors shrink-0 flex items-center justify-center">
+                    <i class="fas fa-trash text-xs"></i>
+                </button>
+            </div>`;
+        return div;
+    }
+
+    function updateRemoveProductosButtons() {
+        const rows = prodContainer.querySelectorAll('.producto-row');
+        rows.forEach(row => {
+            row.querySelector('.remove-producto').classList.toggle('hidden', rows.length <= 1);
+        });
+    }
+
+    addProdButton.addEventListener('click', () => {
+        prodContainer.appendChild(createProductoRow());
+        updateRemoveProductosButtons();
+    });
+
+    prodContainer.addEventListener('click', e => {
+        if (e.target.closest('.remove-producto')) {
+            const rows = prodContainer.querySelectorAll('.producto-row');
+            if (rows.length > 1) {
+                e.target.closest('.producto-row').remove();
+                updateRemoveProductosButtons();
+            }
+        }
+    });
+
+    // ── 3. VALIDACIÓN GENERAL ───────────────────────────────────────────────
+    respContainer.closest('form').addEventListener('submit', function (e) {
+        // Validar responsables duplicados
+        const rSelects = Array.from(respContainer.querySelectorAll('.responsable-select'));
+        const rValues = rSelects.map(s => s.value).filter(v => v !== "");
+        const uniqueResponsibles = new Set(rValues);
+        if (rValues.length !== uniqueResponsibles.size) {
+            e.preventDefault();
+            alert('No puedes asignar al mismo responsable más de una vez.');
+            return;
+        }
+
+        // Validar que no se ingrese exactamente el mismo Producto + Presentación en filas separadas
+        const prodRows = Array.from(prodContainer.querySelectorAll('.producto-row'));
+        const combinations = prodRows.map(row => {
+            const prod = row.querySelector('select[name="productos[]"]').value;
+            const pres = row.querySelector('select[name="presentaciones[]"]').value;
+            return `${prod}-${pres}`;
+        }).filter(c => c !== "-");
+
+        const uniqueCombos = new Set(combinations);
+        if (combinations.length !== uniqueCombos.size) {
+            e.preventDefault();
+            alert('No puedes duplicar el mismo Producto con la misma Presentación. Agrupa las cantidades en una sola fila.');
+            return;
+        }
+    });
+
+    updateRemoveResponsiblesButtons();
+    updateDisabledResponsibles();
+    updateRemoveProductosButtons();
 });
 </script>
 {% endblock %}

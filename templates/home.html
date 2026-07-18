@@ -1,43 +1,73 @@
 {% extends "base.html" %}
-
-{% block title %}Inicio - Chocopasión{% endblock %}
+{% block title %}Inicio — Chocopasión{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-12">
-            <h2 class="mb-4">Bienvenido a Chocopasión</h2>
-            
-            <div class="row">
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-industry"></i> Producción
-                            </h5>
-                            <p class="card-text">Gestiona y registra la producción diaria de chocolates.</p>
-                            <a href="{{ url_for('produccion_index') }}" class="btn btn-primary">
-                                Ir a Producción
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-box"></i> Productos
-                            </h5>
-                            <p class="card-text">Consulta el catálogo de productos disponibles.</p>
-                            <a href="{{ url_for('productos_index') }}" class="btn btn-primary">
-                                Ver Productos
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<!-- Page header -->
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Bienvenido</h1>
+    <p class="text-gray-500 mt-1">Selecciona un módulo para comenzar</p>
+</div>
+
+<!-- Módulos grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+
+    <!-- Producción -->
+    <a href="{{ url_for('produccion_index') }}"
+       class="group bg-white rounded-2xl p-6 shadow-card hover:shadow-card-hover
+              border border-chocolate-100 hover:border-chocolate-300
+              transition-all duration-300 hover:-translate-y-1 flex flex-col gap-4">
+        <div class="w-12 h-12 rounded-xl bg-chocolate-100 flex items-center justify-center
+                    group-hover:bg-chocolate-600 transition-colors duration-300">
+            <i class="fas fa-industry text-chocolate-600 group-hover:text-white text-xl transition-colors"></i>
         </div>
-    </div>
+        <div>
+            <h2 class="font-bold text-gray-900 text-lg group-hover:text-chocolate-700 transition-colors">Producción</h2>
+            <p class="text-gray-500 text-sm mt-1 leading-relaxed">Gestiona y registra la producción diaria de chocolates artesanales.</p>
+        </div>
+        <span class="text-chocolate-500 text-sm font-semibold flex items-center gap-1.5 mt-auto
+                     group-hover:gap-2.5 transition-all">
+            Ir a Producción <i class="fas fa-arrow-right text-xs"></i>
+        </span>
+    </a>
+
+    <!-- Productos -->
+    <a href="{{ url_for('productos_index') }}"
+       class="group bg-white rounded-2xl p-6 shadow-card hover:shadow-card-hover
+              border border-chocolate-100 hover:border-gold-400
+              transition-all duration-300 hover:-translate-y-1 flex flex-col gap-4">
+        <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center
+                    group-hover:bg-gold-400 transition-colors duration-300">
+            <i class="fas fa-box text-gold-500 group-hover:text-white text-xl transition-colors"></i>
+        </div>
+        <div>
+            <h2 class="font-bold text-gray-900 text-lg group-hover:text-gold-600 transition-colors">Productos</h2>
+            <p class="text-gray-500 text-sm mt-1 leading-relaxed">Consulta el catálogo completo de productos disponibles.</p>
+        </div>
+        <span class="text-gold-500 text-sm font-semibold flex items-center gap-1.5 mt-auto
+                     group-hover:gap-2.5 transition-all">
+            Ver Productos <i class="fas fa-arrow-right text-xs"></i>
+        </span>
+    </a>
+
+    <!-- Precios -->
+    <a href="{{ url_for('precios.index') }}"
+       class="group bg-white rounded-2xl p-6 shadow-card hover:shadow-card-hover
+              border border-chocolate-100 hover:border-emerald-300
+              transition-all duration-300 hover:-translate-y-1 flex flex-col gap-4">
+        <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center
+                    group-hover:bg-emerald-500 transition-colors duration-300">
+            <i class="fas fa-dollar-sign text-emerald-600 group-hover:text-white text-xl transition-colors"></i>
+        </div>
+        <div>
+            <h2 class="font-bold text-gray-900 text-lg group-hover:text-emerald-700 transition-colors">Precios</h2>
+            <p class="text-gray-500 text-sm mt-1 leading-relaxed">Administra la lista de precios por producto y presentación.</p>
+        </div>
+        <span class="text-emerald-600 text-sm font-semibold flex items-center gap-1.5 mt-auto
+                     group-hover:gap-2.5 transition-all">
+            Ver Precios <i class="fas fa-arrow-right text-xs"></i>
+        </span>
+    </a>
+
+
 </div>
 {% endblock %}
